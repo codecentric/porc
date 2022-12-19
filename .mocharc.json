@@ -1,0 +1,13 @@
+{
+    "file": [
+        "src/test/common.ts"
+    ],
+    "require": [
+        "ts-node/register/transpile-only"
+    ],
+    "extension": [
+        "ts"
+    ],
+    "recursive": true,
+    "timeout": 1000
+}

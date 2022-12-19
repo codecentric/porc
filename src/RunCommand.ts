@@ -8,24 +8,36 @@ interface Execution {
 }
 
 export class RunCommand {
-
-    private executions: Record<string, Execution> = {}
+    public executions: Record<string, Execution> = {}
 
     constructor(private config: Config) {}
 
-    public async runTasks(tasks: string[]): Promise<void> {
-        // check existence of all requested tasks before starting any of them
-        tasks.forEach(task => this.findTask(task))
+    public async perform(tasks: string[]): Promise<void> {
+        this.checkThatTasksExist(tasks)
 
+        await this.runTasksInParallel(tasks)
+
+        await this.waitForAllProcessesToExit()
+    }
+
+    private async runTasksInParallel(tasks: string[]): Promise<void> {
         // run all tasks in parallel, recursively going through dependencies
         await Promise.all(tasks.map(task => this.runTask(task)))
+    }
+
+    private checkThatTasksExist(tasks: string[]) {
+        tasks.forEach(task => this.findTask(task))
+    }
+
+    private async waitForAllProcessesToExit() {
+        await Promise.all(Object.values(this.executions).map(exec => exec.exitPromise))
     }
 
     private async runTask(task: string) {
         const taskConfig = this.findTask(task)
 
         if (taskConfig.dependsOn?.length) {
-            await this.runTasks(taskConfig.dependsOn)
+            await this.runTasksInParallel(taskConfig.dependsOn)
             this.verbose(`== Successfully executed dependent tasks ${taskConfig.dependsOn?.join(',') || []}`, task, taskConfig.color)
         }
 
@@ -138,7 +150,7 @@ export class RunCommand {
         withoutLastLine.forEach((line: string) => {
             if (this.config.colors) {
                 const coloredLine = logger == 'out' ? line : red(line)
-                log(`${color(name)}: ${coloredLine}`)
+                log(color(name + ': ') + coloredLine)
             } else {
                 log(`${name}: ${line}`)
             }
