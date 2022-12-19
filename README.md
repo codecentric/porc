@@ -1,8 +1,9 @@
-= porc
+# porc
 
-`porc` is a small cli tool to start multiple dependent processes in parallel.
+`porc` is a small cli tool to start multiple dependent processes in parallel. 
+Primary use case is starting multiple dependent web services for local development.
 
-== Installation
+## Installation
 
 ```shell
 npm install --save-dev porc
@@ -14,7 +15,7 @@ When using Yarn:
 yarn add -D porc
 ```
 
-== Configuration
+## Configuration
 
 `porc` expects a `.porcrc` somewhere in your current directory or any parent directory.
 
@@ -22,6 +23,7 @@ The file contains all possible targets and may look like this:
 
 ```json
 {
+    "$schema": "https://raw.githubusercontent.com/codecentric/porc/master/porc-schema.json",
     "tasks": {
         "shared": {
             "exec": "echo Shared"
@@ -45,7 +47,7 @@ The file contains all possible targets and may look like this:
 }
 ```
 
-== Usage
+## Usage
 
 Calling `porc` without arguments or with `-h` or `--help` returns a help text: 
 
