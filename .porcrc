@@ -3,7 +3,7 @@
         "shared": {
             "exec": "echo Shared"
         },
-        "test": {
+        "first": {
             "dependsOn": ["shared"],
             "exec": "echo Test >&2; sleep 2; echo Done",
             "waitFor": {
@@ -16,7 +16,7 @@
             "exec": "echo Some second output"
         },
         "next": {
-            "dependsOn": ["test", "second"]
+            "dependsOn": ["first", "second"]
         }
     }
 }

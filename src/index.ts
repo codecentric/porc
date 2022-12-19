@@ -1,41 +1,30 @@
-import yargs from 'yargs'
 import { RunCommand } from './RunCommand'
 import { CliOptions, createConfiguration } from './Config'
+import { program } from 'commander'
 
-yargs(process.argv.slice(2))
-    .scriptName('porc')
-    .usage('$0 run [task]')
-    .options({
-        'dry-run': {
-            describe: 'Only shows the tasks to be run',
-            type: 'boolean',
-        },
-        'colors': {
-            describe: 'Render colored terminal output',
-            type: 'boolean',
-        }
+program
+    .name('porc')
+    .description('CLI to execute multiple processes in parallel')
+    .option('--dry-run')
+    .option('--colors')
+
+program
+    .command('run')
+    .argument('<tasks...>')
+    .action(async (tasks) => {
+        const options = program.optsWithGlobals()
+        const config = await createConfiguration(options)
+        return new RunCommand(config).runTasks((tasks || []) as string[]).catch(console.error)
     })
-    .command({
-        command: 'run <task>',
-        describe: 'Runs the given task',
-        builder: (deliveredYargs) =>
-            deliveredYargs
-                .positional('task', {
-                    describe: 'The task',
-                    type: 'string',
-                    demandOption: true
-                }),
-        handler: async ({ task, dryRun, colors }) => {
-            const config = await createConfiguration({ dryRun, colors })
-            return new RunCommand(config).execute(task).catch(console.error)
-        }
+
+program
+    .command('config')
+    .action(async (options) => {
+        const config = await createConfiguration(options as CliOptions)
+        console.log(JSON.stringify(config, undefined, 2))
     })
-    .command({
-        command: 'config',
-        describe: 'Shows the current configuration',
-        handler: async (options) => {
-            const config = await createConfiguration(options as CliOptions)
-            console.log(JSON.stringify(config, undefined, 2))
-        }
-    })
-    .demandCommand().argv
+
+;(async () => {
+    await program.parseAsync(process.argv)
+})()
+

@@ -14,8 +14,8 @@
   "dependencies": {
     "child-process-promise": "^2.2.1",
     "colors": "^1.4.0",
-    "find-config": "^1.0.0",
-    "yargs": "^17.6.2"
+    "commander": "^9.4.1",
+    "find-config": "^1.0.0"
   },
   "devDependencies": {
     "@types/child-process-promise": "^2.2.2",

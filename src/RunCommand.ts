@@ -12,13 +12,15 @@ export class RunCommand {
 
     constructor(private config: Config) {}
 
-    public async execute(task: string): Promise<void> {
+    public async runTasks(tasks: string[]): Promise<void> {
+        await Promise.all(tasks.map(task => this.runTask(task)))
+    }
+
+    private async runTask(task: string) {
         const taskConfig = this.findTask(task)
 
         if (taskConfig.dependsOn?.length) {
-            await Promise.all(taskConfig.dependsOn.map(async dependency => {
-                await this.execute(dependency)
-            }) || [])
+            await this.runTasks(taskConfig.dependsOn)
             this.writeToConsole(`== Successfully executed dependent tasks ${taskConfig.dependsOn?.join(',') || []}`, task, taskConfig.color)
         }
 
