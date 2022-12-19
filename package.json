@@ -15,9 +15,6 @@
   "private": true,
   "packageManager": "yarn@3.3.0",
   "bin": "./lib/index.js",
-  "files": [
-    "/lib"
-  ],
   "scripts": {
     "build": "yarn compile && yarn schema",
     "compile": "tsc",
