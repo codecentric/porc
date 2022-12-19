@@ -7,6 +7,9 @@
   "license": "MIT",
   "private": true,
   "packageManager": "yarn@3.3.0",
+  "files": [
+    "/lib"
+  ],
   "scripts": {
     "build": "tsc",
     "porc": "yarn build && node lib/index.js"
