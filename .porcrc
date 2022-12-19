@@ -13,10 +13,18 @@
         },
         "second": {
             "dependsOn": ["shared"],
-            "exec": "echo Some second output"
+            "cwd": "lib",
+            "exec": "ls"
         },
         "next": {
             "dependsOn": ["first", "second"]
+        },
+        "failingWithTimeout": {
+            "exec": "echo Test; sleep 2; echo Done",
+            "waitFor": {
+                "stdout": "Done",
+                "timeout": 500
+            }
         }
     }
 }

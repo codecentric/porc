@@ -45,30 +45,53 @@ export class RunCommand {
         if (this.config.dryRun) {
             return this.executeNothing()
         }
-        const exitPromise = exec(statement)
+        let exitTimeout = (taskConfig.waitFor?.stderr || taskConfig.waitFor?.stdout) ? 0 : (taskConfig.waitFor?.timeout || 0)
+        if (exitTimeout) {
+            this.writeToConsole(`== Adding timeout of ${taskConfig.waitFor!.timeout}ms waiting for exit"`, name, taskConfig.color)
+        }
+        const exitPromise = exec(statement, {
+            shell: this.config.shell,
+            cwd: taskConfig.cwd,
+            // wait for exit here
+            timeout: exitTimeout,
+            killSignal: taskConfig.waitFor ? taskConfig.waitFor.killSignal : 'SIGTERM'
+        })
 
-        let resolved = false
+        let resolvedOrRejected = false
         const waitForPromise = new Promise(async (resolve, reject) => {
+            if ((taskConfig.waitFor?.stdout || taskConfig.waitFor?.stderr) && taskConfig.waitFor?.timeout) {
+                this.writeToConsole(`== Adding timeout of ${taskConfig.waitFor.timeout}ms waiting for output"`, name, taskConfig.color)
+                setTimeout(() => {
+                    if (!resolvedOrRejected) {
+                        resolvedOrRejected = true
+                        this.writeToConsole(`== Timed out after ${taskConfig.waitFor!.timeout}ms waiting for output"`, name, taskConfig.color)
+                        // TODO maybe still wait for the process to terminate with outputs here.
+                        // TODO in that case, we might need a second timeout for logging a stale process and/or SIGKILLing it
+                        exitPromise.childProcess.kill(taskConfig.waitFor?.killSignal)
+                        reject(`Timeout running task "${name}". Killed via ${taskConfig.waitFor?.killSignal}.`)
+                    }
+                }, taskConfig.waitFor.timeout)
+            }
             exitPromise.childProcess.stdout?.on('data', (data: any) => {
                 this.writeToConsole(data, name, taskConfig.color)
-                if (!resolved && data?.includes(taskConfig.waitFor?.stdout)) {
-                    resolved = true
+                if (!resolvedOrRejected && data?.includes(taskConfig.waitFor?.stdout)) {
+                    resolvedOrRejected = true
                     resolve(undefined)
                 }
             })
             exitPromise.childProcess.stderr?.on('data', (data: any) => {
                 this.writeToConsole(data, name, taskConfig.color, console.error)
-                if (!resolved && data?.includes(taskConfig.waitFor?.stderr)) {
-                    resolved = true
+                if (!resolvedOrRejected && data?.includes(taskConfig.waitFor?.stderr)) {
+                    resolvedOrRejected = true
                     resolve(undefined)
                 }
             })
             return await exitPromise.then(() => {
-                if (!resolved) {
+                if (!resolvedOrRejected) {
                     resolve(undefined)
                 }
             }).catch((err) => {
-                if (!resolved) {
+                if (!resolvedOrRejected) {
                     reject(err)
                 }
             })
