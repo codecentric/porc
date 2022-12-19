@@ -3,7 +3,14 @@
   "version": "1.0.0",
   "description": "Process Orchestrator",
   "main": "lib/index.js",
-  "author": "Carsten Rohrbach <carsten.rohrbach@codecentric.de>",
+  "contributors": [
+    {
+      "name": "Carsten Rohrbach",
+      "email": "carsten.rohrbach@codecentric.de",
+      "url": "https://github.com/robaca",
+      "githubUsername": "robaca"
+    }
+  ],
   "license": "MIT",
   "private": true,
   "packageManager": "yarn@3.3.0",
