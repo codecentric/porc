@@ -20,7 +20,7 @@ program
     .action(async (tasks) => {
         const options = program.optsWithGlobals()
         const config = await createConfiguration(options, tasks)
-        return new RunCommand(config).perform((tasks || []) as string[]).catch(console.error)
+        return await new RunCommand(config).perform((tasks || []) as string[]).catch(console.error)
     })
 
 program
@@ -34,11 +34,11 @@ program
 
 program.on('command:*', async () => {
     const tasks = program.args
-    if (tasks) {
+    if (tasks && tasks.length) {
         // fallback: try to run args as tasks
         const options = program.optsWithGlobals()
         const config = await createConfiguration(options, tasks)
-        return new RunCommand(config).perform(tasks).catch(console.error)
+        await new RunCommand(config).perform(tasks).catch(console.error)
     }
 });
 
