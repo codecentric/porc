@@ -13,6 +13,10 @@ export class RunCommand {
     constructor(private config: Config) {}
 
     public async runTasks(tasks: string[]): Promise<void> {
+        // check existence of all requested tasks before starting any of them
+        tasks.forEach(task => this.findTask(task))
+
+        // run all tasks in parallel, recursively going through dependencies
         await Promise.all(tasks.map(task => this.runTask(task)))
     }
 
