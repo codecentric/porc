@@ -1,6 +1,6 @@
 {
   "name": "porc",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Process Orchestrator",
   "main": "lib/index.js",
   "contributors": [
@@ -12,7 +12,6 @@
     }
   ],
   "license": "MIT",
-  "private": true,
   "packageManager": "yarn@3.3.0",
   "bin": "./lib/index.js",
   "scripts": {
