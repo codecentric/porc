@@ -7,6 +7,9 @@
   "license": "MIT",
   "private": true,
   "packageManager": "yarn@3.3.0",
+  "bin": {
+    "porc": "./lib/index.js"
+  },
   "files": [
     "/lib"
   ],
