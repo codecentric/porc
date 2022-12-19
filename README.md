@@ -47,6 +47,8 @@ The file contains all possible targets and may look like this:
 }
 ```
 
+The documentation is still in progress. Please check the [schema](https://github.com/codecentric/porc/blob/master/porc-schema.json) for now.
+
 ## Usage
 
 Calling `porc` without arguments or with `-h` or `--help` returns a help text: 
