@@ -11,6 +11,7 @@
       "githubUsername": "robaca"
     }
   ],
+  "repository": "https://github.com/codecentric/porc.git",
   "license": "MIT",
   "packageManager": "yarn@3.3.0",
   "bin": "./lib/index.js",
