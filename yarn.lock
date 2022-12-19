@@ -2144,7 +2144,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"meriyah@npm:^4.2.1":
+"meriyah@npm:^4.2.1, meriyah@npm:^4.3.3":
   version: 4.3.3
   resolution: "meriyah@npm:4.3.3"
   checksum: dbb9803bd1722e56b9703df34be0c28ef091425ae59b70987f9dcc25d47716583240489b6a31e8c3c290eedfbb6087f7f134ca9b27777b712131904c809faa7c
@@ -2383,9 +2383,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nexe@npm:^4.0.0-rc.1":
-  version: 4.0.0-rc.1
-  resolution: "nexe@npm:4.0.0-rc.1"
+"nexe@npm:^4.0.0-rc.2":
+  version: 4.0.0-rc.2
+  resolution: "nexe@npm:4.0.0-rc.2"
   dependencies:
     "@calebboyd/semaphore": ^1.3.1
     app-builder: ^7.0.4
@@ -2394,16 +2394,16 @@ __metadata:
     download: ^8.0.0
     globby: ^11.0.2
     got: ^11.8.2
-    meriyah: ^4.2.1
+    meriyah: ^4.3.3
     minimist: ^1.2.6
     mkdirp: ^1.0.4
     multistream: ^4.1.0
     ora: ^3.4.0
-    resolve-dependencies: ^6.0.7
+    resolve-dependencies: ^6.0.8
     rimraf: ^3.0.2
   bin:
     nexe: index.js
-  checksum: e7ada73d2dd3dc9b1e27e92bc21e919a71e321c5d71e7af60234a1545ed5fad594b2d539c345c7aa79277cca955752805ac946592aaf135d326b42957dd6eb4e
+  checksum: a7d63dbbb4a1ad7f2daa40941c213470d2fe916179e8508d2c0846ff03d0798a76d53a018f2e785d64998465870e088b3576865bb989c03cba8f8a7bf9aad09d
   languageName: node
   linkType: hard
 
@@ -2740,7 +2740,7 @@ __metadata:
     commander: ^9.4.1
     find-config: ^1.0.0
     mocha: ^10.2.0
-    nexe: ^4.0.0-rc.1
+    nexe: ^4.0.0-rc.2
     sinon: ^15.0.1
     sinon-chai: ^3.7.0
     sinon-chai-in-order: ^0.1.0
@@ -2897,7 +2897,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"resolve-dependencies@npm:^6.0.7":
+"resolve-dependencies@npm:^6.0.8":
   version: 6.0.8
   resolution: "resolve-dependencies@npm:6.0.8"
   dependencies:
