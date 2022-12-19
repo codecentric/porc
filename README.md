@@ -80,3 +80,9 @@ porc run next
 porc next
 ```
 
+Printing out the computed configuration:
+
+```shell
+porc config
+```
+
