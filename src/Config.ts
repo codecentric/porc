@@ -53,8 +53,20 @@ export async function createConfiguration(options: CliOptions): Promise<Config> 
         colors: options.colors !== undefined ? options.colors : (fileConfig.colors !== undefined ? fileConfig.colors : true),
         dryRun: options.dryRun || false
     }
+    checkConfig(config)
     if (config.colors) {
         enableColors()
     }
     return config
 }
+
+function checkConfig(config: Config) {
+    Object.entries(config.tasks).forEach(([name, task]) => {
+        task.dependsOn?.forEach(dependency => {
+            if (!config.tasks[dependency]) {
+                throw new Error(`Task "${name}" has unknown dependency "${dependency}"` )
+            }
+        })
+    })
+}
+
