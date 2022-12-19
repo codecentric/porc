@@ -15,9 +15,12 @@ export class RunCommand {
     public async execute(task: string): Promise<void> {
         const taskConfig = this.findTask(task)
 
-        await Promise.all(taskConfig.dependsOn?.map(async dependency => {
-            await this.execute(dependency)
-        }) || [])
+        if (taskConfig.dependsOn?.length) {
+            await Promise.all(taskConfig.dependsOn.map(async dependency => {
+                await this.execute(dependency)
+            }) || [])
+            this.writeToConsole(`== Successfully executed dependent tasks ${taskConfig.dependsOn?.join(',') || []}`, task, taskConfig.color)
+        }
 
         let execution = this.executions[task]
         if (!execution) {
@@ -30,14 +33,16 @@ export class RunCommand {
     private executeTask(name: string, taskConfig: Task) {
         const statement = taskConfig.exec
         if (!statement) {
-            return this.executeEmptyTask(taskConfig, name)
+            return this.executeNothing()
         }
         return this.executeStatement(statement, name, taskConfig)
     }
 
     private executeStatement(statement: string, name: string, taskConfig: Task) {
-        console.log(`Executing ${statement}`)
-
+        this.writeToConsole(`== Executing "${statement}"`, name, taskConfig.color)
+        if (this.config.dryRun) {
+            return this.executeNothing()
+        }
         const exitPromise = exec(statement)
 
         let resolved = false
@@ -72,11 +77,10 @@ export class RunCommand {
         }
     }
 
-    private executeEmptyTask(taskConfig: Task, name: string) {
-        this.writeToConsole(`Successfully executed dependent tasks ${taskConfig.dependsOn?.join(',') || []}`, name, taskConfig.color)
+    private executeNothing() {
         return {
-            waitForPromise: Promise.resolve(),
-            exitPromise: Promise.resolve()
+            exitPromise: Promise.resolve(),
+            waitForPromise: Promise.resolve()
         }
     }
 
