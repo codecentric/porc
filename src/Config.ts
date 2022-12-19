@@ -16,7 +16,7 @@ export interface FileConfig {
     /**
      * Map of task configurations.
      */
-    tasks: Record<string, FileTask>
+    tasks: { [name: string]: FileTask }
 
     /**
      * Support colorized output. Default: true
@@ -77,7 +77,7 @@ interface FileWaitFor {
     /**
      * Signal to use to terminate a process after a timeout
      */
-    killSignal: 'SIGTERM' | 'SIGKILL'
+    killSignal?: 'SIGTERM' | 'SIGKILL'
 }
 
 export interface CliOptions {
@@ -90,7 +90,7 @@ export interface CliOptions {
 export interface Config extends FileConfig {
     colors: boolean
     dryRun: boolean
-    tasks: Record<string, Task>
+    tasks: { [name: string]: Task }
 
     rootDir: string
 }
@@ -130,7 +130,6 @@ export async function createConfiguration(options: CliOptions, tasks?: string[])
                     killSignal: fileTask.waitFor.killSignal || 'SIGTERM',
                 } : undefined
             }
-            console.log(key, quiet)
             return fullTasks
         }, {}),
         focus,

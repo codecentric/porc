@@ -47,6 +47,36 @@ The file contains all possible targets and may look like this:
 
 == Usage
 
+Calling `porc` without arguments or with `-h` or `--help` returns a help text: 
+
 ```sh
+$ porc --help
+
+Usage: porc [options] [command]
+
+CLI to execute multiple processes in parallel
+
+Options:
+  -d, --dry-run     don't actually execute the statements
+  -c, --colors      render colored output to terminal
+  -nc, --no-colors  disable rendering of colors
+  -f, --focus       only show standard output of directly requested tasks
+  -nf, --no-focus   show standard output by default
+  -v, --verbose     verbose output
+  -h, --help        display help for command
+
+Commands:
+  run <tasks...>    execute given tasks
+  config            show the configuration
+  help [command]    display help for command
+```
+
+Running a task:
+
+```shell
+porc run next
+
+# or shorter:
 porc next
 ```
+

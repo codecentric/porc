@@ -1,0 +1,106 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false,
+    "definitions": {
+        "FileTask": {
+            "additionalProperties": false,
+            "properties": {
+                "cwd": {
+                    "description": "Working directory relative to the .porcrc",
+                    "title": "cwd",
+                    "type": "string"
+                },
+                "dependsOn": {
+                    "description": "Dependent task names.",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "dependsOn",
+                    "type": "array"
+                },
+                "exec": {
+                    "description": "Execution command, passed to the shell executable via the '-c' argument.",
+                    "title": "exec",
+                    "type": "string"
+                },
+                "quiet": {
+                    "description": "Do not write STDOUT to console?\nDefault: false",
+                    "title": "quiet",
+                    "type": "boolean"
+                },
+                "waitFor": {
+                    "$ref": "#/definitions/FileWaitFor",
+                    "description": "Optional configuration how long to wait after the process has started.\nDefault: unit after exit",
+                    "title": "waitFor"
+                }
+            },
+            "title": "FileTask",
+            "type": "object"
+        },
+        "FileWaitFor": {
+            "additionalProperties": false,
+            "properties": {
+                "killSignal": {
+                    "description": "Signal to use to terminate a process after a timeout",
+                    "enum": [
+                        "SIGKILL",
+                        "SIGTERM"
+                    ],
+                    "title": "killSignal",
+                    "type": "string"
+                },
+                "stderr": {
+                    "description": "Text to search for in stderr",
+                    "title": "stderr",
+                    "type": "string"
+                },
+                "stdout": {
+                    "description": "Text to search for in stdout",
+                    "title": "stdout",
+                    "type": "string"
+                },
+                "timeout": {
+                    "description": "Timeout after which the process is considered failing, while waiting for exit or missing stdout/stderr output.",
+                    "title": "timeout",
+                    "type": "number"
+                }
+            },
+            "title": "FileWaitFor",
+            "type": "object"
+        }
+    },
+    "properties": {
+        "colors": {
+            "description": "Support colorized output. Default: true",
+            "title": "colors",
+            "type": "boolean"
+        },
+        "focus": {
+            "title": "focus",
+            "type": "boolean"
+        },
+        "shell": {
+            "description": "Use an alternative shell. For requirements and defaults, see the `shell` argument here:\nhttps://nodejs.org/api/child_process.html#child_processexeccommand-options-callback",
+            "title": "shell",
+            "type": "string"
+        },
+        "tasks": {
+            "additionalProperties": {
+                "$ref": "#/definitions/FileTask"
+            },
+            "description": "Map of task configurations.",
+            "title": "tasks",
+            "type": "object"
+        },
+        "verbose": {
+            "description": "Print out status messages",
+            "title": "verbose",
+            "type": "boolean"
+        }
+    },
+    "required": [
+        "tasks"
+    ],
+    "type": "object"
+}
+

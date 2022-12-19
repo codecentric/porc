@@ -1,4 +1,5 @@
 {
+    "$schema": "./porc-schema.json",
     "verbose": false,
     "tasks": {
         "shared": {
