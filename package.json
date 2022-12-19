@@ -14,6 +14,7 @@
   "scripts": {
     "build": "yarn compile && yarn schema",
     "compile": "tsc",
+    "test": "mocha 'src/**/*.spec.ts'",
     "schema": "typescript-json-schema tsconfig.json --required --noExtraProps --titles FileConfig -o porc-schema.json",
     "porc": "yarn compile && node lib/index.js"
   },
