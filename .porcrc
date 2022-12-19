@@ -1,0 +1,22 @@
+{
+    "tasks": {
+        "shared": {
+            "exec": "echo Shared"
+        },
+        "test": {
+            "dependsOn": ["shared"],
+            "exec": "echo Test >&2; sleep 2; echo Done",
+            "waitFor": {
+                "stderr": "Test",
+                "timeout": 500
+            }
+        },
+        "second": {
+            "dependsOn": ["shared"],
+            "exec": "echo Some second output"
+        },
+        "next": {
+            "dependsOn": ["test", "second"]
+        }
+    }
+}

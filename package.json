@@ -1,0 +1,28 @@
+{
+  "name": "porc",
+  "version": "1.0.0",
+  "description": "Process Orchestrator",
+  "main": "lib/index.js",
+  "author": "Carsten Rohrbach <carsten.rohrbach@codecentric.de>",
+  "license": "MIT",
+  "private": true,
+  "packageManager": "yarn@3.3.0",
+  "scripts": {
+    "build": "tsc",
+    "porc": "yarn build && node lib/index.js"
+  },
+  "dependencies": {
+    "child-process-promise": "^2.2.1",
+    "colors": "^1.4.0",
+    "find-config": "^1.0.0",
+    "yargs": "^17.6.2"
+  },
+  "devDependencies": {
+    "@types/child-process-promise": "^2.2.2",
+    "@types/find-config": "^1.0.1",
+    "@types/node": "^18.0.0",
+    "@types/yargs": "^17.0.17",
+    "nexe": "^4.0.0-rc.1",
+    "typescript": "^4.9.4"
+  }
+}
