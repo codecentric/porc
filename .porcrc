@@ -1,4 +1,5 @@
 {
+    "verbose": false,
     "tasks": {
         "shared": {
             "exec": "echo Shared"
@@ -6,6 +7,7 @@
         "first": {
             "dependsOn": ["shared"],
             "exec": "echo Test >&2; sleep 2; echo Done",
+            "quiet": true,
             "waitFor": {
                 "stderr": "Test",
                 "timeout": 500

@@ -1,5 +1,6 @@
 import { COLOR, Config, Task } from './Config'
 import { exec } from 'child-process-promise'
+import { red } from 'colors/safe'
 
 interface Execution {
     exitPromise: Promise<unknown>
@@ -25,7 +26,7 @@ export class RunCommand {
 
         if (taskConfig.dependsOn?.length) {
             await this.runTasks(taskConfig.dependsOn)
-            this.writeToConsole(`== Successfully executed dependent tasks ${taskConfig.dependsOn?.join(',') || []}`, task, taskConfig.color)
+            this.verbose(`== Successfully executed dependent tasks ${taskConfig.dependsOn?.join(',') || []}`, task, taskConfig.color)
         }
 
         let execution = this.executions[task]
@@ -45,13 +46,13 @@ export class RunCommand {
     }
 
     private executeStatement(statement: string, name: string, taskConfig: Task) {
-        this.writeToConsole(`== Executing "${statement}"`, name, taskConfig.color)
+        this.verbose(`== Executing "${statement}"`, name, taskConfig.color)
         if (this.config.dryRun) {
             return this.executeNothing()
         }
         let exitTimeout = (taskConfig.waitFor?.stderr || taskConfig.waitFor?.stdout) ? 0 : (taskConfig.waitFor?.timeout || 0)
         if (exitTimeout) {
-            this.writeToConsole(`== Adding timeout of ${taskConfig.waitFor!.timeout}ms waiting for exit"`, name, taskConfig.color)
+            this.verbose(`== Adding timeout of ${taskConfig.waitFor!.timeout}ms waiting for exit"`, name, taskConfig.color)
         }
         const exitPromise = exec(statement, {
             shell: this.config.shell,
@@ -64,11 +65,11 @@ export class RunCommand {
         let resolvedOrRejected = false
         const waitForPromise = new Promise(async (resolve, reject) => {
             if ((taskConfig.waitFor?.stdout || taskConfig.waitFor?.stderr) && taskConfig.waitFor?.timeout) {
-                this.writeToConsole(`== Adding timeout of ${taskConfig.waitFor.timeout}ms waiting for output"`, name, taskConfig.color)
+                this.verbose(`== Adding timeout of ${taskConfig.waitFor.timeout}ms waiting for output"`, name, taskConfig.color)
                 setTimeout(() => {
                     if (!resolvedOrRejected) {
                         resolvedOrRejected = true
-                        this.writeToConsole(`== Timed out after ${taskConfig.waitFor!.timeout}ms waiting for output"`, name, taskConfig.color)
+                        this.verbose(`== Timed out after ${taskConfig.waitFor!.timeout}ms waiting for output"`, name, taskConfig.color)
                         // TODO maybe still wait for the process to terminate with outputs here.
                         // TODO in that case, we might need a second timeout for logging a stale process and/or SIGKILLing it
                         exitPromise.childProcess.kill(taskConfig.waitFor?.killSignal)
@@ -77,14 +78,16 @@ export class RunCommand {
                 }, taskConfig.waitFor.timeout)
             }
             exitPromise.childProcess.stdout?.on('data', (data: any) => {
-                this.writeToConsole(data, name, taskConfig.color)
+                if (!taskConfig.quiet) {
+                    this.writeToConsole(data, name, taskConfig.color)
+                }
                 if (!resolvedOrRejected && data?.includes(taskConfig.waitFor?.stdout)) {
                     resolvedOrRejected = true
                     resolve(undefined)
                 }
             })
             exitPromise.childProcess.stderr?.on('data', (data: any) => {
-                this.writeToConsole(data, name, taskConfig.color, console.error)
+                this.writeToConsole(data, name, taskConfig.color, 'err')
                 if (!resolvedOrRejected && data?.includes(taskConfig.waitFor?.stderr)) {
                     resolvedOrRejected = true
                     resolve(undefined)
@@ -121,15 +124,23 @@ export class RunCommand {
         return taskConfig
     }
 
-    private writeToConsole(data: string, name: string, color: COLOR, logger: (line: string) => void = console.log) {
+    private verbose(text: string, taskName: string, color: COLOR) {
+        if (this.config.verbose) {
+            this.writeToConsole(text, taskName, color)
+        }
+    }
+
+    private writeToConsole(data: string, name: string, color: COLOR, logger: 'out' | 'err' = 'out') {
         const lines = data.split('\n')
         let lastLineIndex = lines.length - 1
         const withoutLastLine = lines[lastLineIndex] === '' ? lines.slice(0, lastLineIndex) : lines
+        const log = logger == 'out' ? console.log : console.error
         withoutLastLine.forEach((line: string) => {
             if (this.config.colors) {
-                logger(`${color(name)}: ${line}`)
+                const coloredLine = logger == 'out' ? line : red(line)
+                log(`${color(name)}: ${coloredLine}`)
             } else {
-                logger(line)
+                log(`${name}: ${line}`)
             }
         })
     }

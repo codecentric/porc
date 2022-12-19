@@ -8,13 +8,17 @@ program
     .description('CLI to execute multiple processes in parallel')
     .option('--dry-run')
     .option('--colors')
+    .option('--no-colors')
+    .option('--focus')
+    .option('--no-focus')
+    .option('--verbose')
 
 program
     .command('run')
     .argument('<tasks...>')
     .action(async (tasks) => {
         const options = program.optsWithGlobals()
-        const config = await createConfiguration(options)
+        const config = await createConfiguration(options, tasks)
         return new RunCommand(config).runTasks((tasks || []) as string[]).catch(console.error)
     })
 
@@ -27,11 +31,12 @@ program
 
 
 program.on('command:*', async () => {
-    if (program.args) {
+    const tasks = program.args
+    if (tasks) {
         // fallback: try to run args as tasks
         const options = program.optsWithGlobals()
-        const config = await createConfiguration(options)
-        return new RunCommand(config).runTasks(program.args).catch(console.error)
+        const config = await createConfiguration(options, tasks)
+        return new RunCommand(config).runTasks(tasks).catch(console.error)
     }
 });
 

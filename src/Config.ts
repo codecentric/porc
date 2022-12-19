@@ -7,8 +7,28 @@ const COLORS = [ red, green, yellow, blue, magenta, cyan, gray, black, white] as
 export type COLOR = typeof COLORS[number]
 
 export interface FileConfig {
+    /**
+     * Use an alternative shell. For requirements and defaults, see the `shell` argument here:
+     * https://nodejs.org/api/child_process.html#child_processexeccommand-options-callback
+     */
+    shell?: string
+
+    /**
+     * Map of task configurations.
+     */
     tasks: Record<string, FileTask>
+
+    /**
+     * Support colorized output. Default: true
+     */
     colors?: boolean
+
+    /**
+     * Print out status messages
+     */
+    verbose?: boolean
+
+    focus?: boolean
 }
 
 export interface FileTask {
@@ -28,13 +48,19 @@ export interface FileTask {
     cwd?: string
 
     /**
+     * Do not write STDOUT to console?
+     * Default: false
+     */
+    quiet?: boolean
+
+    /**
      * Optional configuration how long to wait after the process has started.
      * Default: unit after exit
      */
-    waitFor?: WaitFor
+    waitFor?: FileWaitFor
 }
 
-interface WaitFor {
+interface FileWaitFor {
     /**
      * Text to search for in stdout
      */
@@ -57,10 +83,11 @@ interface WaitFor {
 export interface CliOptions {
     colors?: boolean
     dryRun?: boolean
+    verbose?: boolean
+    focus?: boolean
 }
 
 export interface Config extends FileConfig {
-    shell?: string
     colors: boolean
     dryRun: boolean
     tasks: Record<string, Task>
@@ -70,9 +97,15 @@ export interface Config extends FileConfig {
 
 export interface Task extends FileTask {
     color: COLOR
+    quiet: boolean
+    waitFor?: WaitFor
 }
 
-export async function createConfiguration(options: CliOptions): Promise<Config> {
+export interface WaitFor extends FileWaitFor {
+    killSignal: 'SIGTERM' | 'SIGKILL'
+}
+
+export async function createConfiguration(options: CliOptions, tasks?: string[]): Promise<Config> {
     const configObj = findConfig.obj('.porcrc')
     if (!configObj) {
         throw new Error(`Didn't find any .porcrc in the current working directory or any parent directory.`)
@@ -81,21 +114,27 @@ export async function createConfiguration(options: CliOptions): Promise<Config> 
     const configFile = configObj.path
     const fileConfig: FileConfig = JSON.parse(await fs.promises.readFile(configFile, 'utf-8'))
 
-    let config = {
+    const focus = options.focus !== undefined ? options.focus : (fileConfig.focus !== undefined ? fileConfig.focus : true)
+    const config = {
         ...fileConfig,
         tasks: Object.keys(fileConfig.tasks).reduce((fullTasks: Record<string, Task>, key, index) => {
             const fileTask = fileConfig.tasks[key]
+            let quiet = fileTask.quiet ? true : (focus && tasks && !tasks.includes(key)) || false
             fullTasks[key] = {
                 ...fileTask,
                 color: COLORS[index % COLORS.length],
                 cwd: fileTask.cwd ? path.join(rootDir, fileTask.cwd) : rootDir,
+                quiet,
                 waitFor: fileTask.waitFor ? {
                     ...fileTask.waitFor,
-                    killSignal: fileTask.waitFor.killSignal || 'SIGTERM'
+                    killSignal: fileTask.waitFor.killSignal || 'SIGTERM',
                 } : undefined
             }
+            console.log(key, quiet)
             return fullTasks
         }, {}),
+        focus,
+        verbose: options.verbose ? true : (fileConfig.verbose || false),
         colors: options.colors !== undefined ? options.colors : (fileConfig.colors !== undefined ? fileConfig.colors : true),
         dryRun: options.dryRun || false,
         rootDir
