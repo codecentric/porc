@@ -1,23 +1,54 @@
 import { COLOR, Config, Task } from './Config'
 import { exec } from 'child-process-promise'
 import chalk from 'chalk'
+import { ChildProcess } from 'child_process'
 
 interface Execution {
+    task: Task
+    childProcess?: ChildProcess
     exitPromise: Promise<unknown>
     waitForPromise: Promise<unknown>
 }
 
+class InterruptedError extends Error {
+    constructor (message: string, private readonly taskName: string) {
+        super(message)
+    }
+}
+
 export class RunCommand {
     public executions: Record<string, Execution> = {}
+
+    private interrupted = false
 
     constructor (private readonly config: Config) {}
 
     public async perform (tasks: string[]): Promise<void> {
         this.checkThatTasksExist(tasks)
 
-        await this.runTasksInParallel(tasks)
+        this.propagateTerminateSignalsToChildProcesses()
 
-        await this.waitForAllProcessesToExit()
+        try {
+            await this.runTasksInParallel(tasks)
+            await this.waitForAllProcessesToExit()
+        } catch (err) {
+            if (!(err instanceof InterruptedError)) {
+                throw err
+            }
+        }
+    }
+
+    private propagateTerminateSignalsToChildProcesses (): void {
+        process.on('SIGINT', () => {
+            this.handleSignal('SIGINT')
+        })
+        process.on('SIGQUIT', () => {
+            this.handleSignal('SIGQUIT')
+        })
+        process.on('SIGTERM', () => {
+            this.handleSignal('SIGTERM')
+            process.exit(137)
+        })
     }
 
     private async runTasksInParallel (tasks: string[]): Promise<void> {
@@ -31,6 +62,22 @@ export class RunCommand {
 
     private async waitForAllProcessesToExit (): Promise<void> {
         await Promise.all(Object.values(this.executions).map(async exec => await exec.exitPromise))
+    }
+
+    public handleSignal (signal: 'SIGTERM' | 'SIGINT' | 'SIGQUIT'): void {
+        if (!this.interrupted) {
+            this.interrupted = true
+            this.sendSignalToChildProcesses(signal)
+        } else {
+            this.sendSignalToChildProcesses('SIGKILL')
+        }
+    }
+
+    private sendSignalToChildProcesses (signal: 'SIGTERM' | 'SIGINT' | 'SIGQUIT' | 'SIGKILL'): void {
+        Object.entries(this.executions).forEach(([name, exec]) => {
+            this.verbose(`Sent ${signal} to task ${name}`, name, exec.task.color)
+            exec.childProcess?.kill(signal)
+        })
     }
 
     private async runTask (task: string): Promise<void> {
@@ -52,7 +99,7 @@ export class RunCommand {
     private executeTask (name: string, taskConfig: Task): Execution {
         const statement = taskConfig.exec
         if (!statement) {
-            return this.executeNothing()
+            return this.executeNothing(taskConfig)
         }
         return this.executeStatement(statement, name, taskConfig)
     }
@@ -60,7 +107,7 @@ export class RunCommand {
     private executeStatement (statement: string, name: string, taskConfig: Task): Execution {
         this.verbose(`== Executing "${statement}"`, name, taskConfig.color)
         if (this.config.dryRun) {
-            return this.executeNothing()
+            return this.executeNothing(taskConfig)
         }
         const exitTimeout = (taskConfig.waitFor?.stderr ?? taskConfig.waitFor?.stdout) ? 0 : (taskConfig.waitFor?.timeout ?? 0)
         if (exitTimeout) {
@@ -74,6 +121,7 @@ export class RunCommand {
             timeout: exitTimeout,
             killSignal: (taskConfig.waitFor != null) ? taskConfig.waitFor.killSignal : 'SIGTERM'
         })
+        const childProcess = exitPromise.childProcess
 
         let resolvedOrRejected = false
         const waitForPromise = new Promise((resolve, reject) => {
@@ -109,23 +157,33 @@ export class RunCommand {
                 }
             })
             exitPromise.then(() => {
+                delete this.executions[name]?.childProcess
                 if (!resolvedOrRejected) {
                     resolve(undefined)
                 }
             }).catch((err) => {
                 if (!resolvedOrRejected) {
-                    reject(err)
+                    if (this.interrupted) {
+                        this.writeToConsole('Task has been interrupted', name, taskConfig.color, 'err')
+                        reject(new InterruptedError('Process has beeen interrupted', name))
+                    } else {
+                        reject(err)
+                    }
                 }
             })
         })
         return {
+            task: taskConfig,
+            childProcess,
             exitPromise,
             waitForPromise
         }
     }
 
-    private executeNothing (): Execution {
+    private executeNothing (task: Task): Execution {
         return {
+            task,
+            childProcess: undefined,
             exitPromise: Promise.resolve(),
             waitForPromise: Promise.resolve()
         }
