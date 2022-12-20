@@ -80,7 +80,7 @@ describe('RunCommand', () => {
             expect(consoleLog).to.have.been.calledWith(red('test: ') + 'Test')
         })
 
-        it('should write the error outpu#t in red color to stderr', async () => {
+        it('should write the error output in red color to stderr', async () => {
             config.tasks.test.exec = 'echo Test >&2'
             command = new RunCommand(config)
 

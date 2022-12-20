@@ -67,15 +67,17 @@ export class RunCommand {
     public handleSignal (signal: 'SIGTERM' | 'SIGINT' | 'SIGQUIT'): void {
         if (!this.interrupted) {
             this.interrupted = true
-            Object.entries(this.executions).forEach(([name, exec]) => {
-                this.verbose(`Sent ${signal} to task ${name}`, name, exec.task.color)
-                exec.childProcess?.kill(signal)
-            })
+            this.sendSignalToChildProcesses(signal)
         } else {
-            Object.values(this.executions).forEach(exec => {
-                exec.childProcess?.kill('SIGKILL')
-            })
+            this.sendSignalToChildProcesses('SIGKILL')
         }
+    }
+
+    private sendSignalToChildProcesses (signal: 'SIGTERM' | 'SIGINT' | 'SIGQUIT' | 'SIGKILL'): void {
+        Object.entries(this.executions).forEach(([name, exec]) => {
+            this.verbose(`Sent ${signal} to task ${name}`, name, exec.task.color)
+            exec.childProcess?.kill(signal)
+        })
     }
 
     private async runTask (task: string): Promise<void> {
