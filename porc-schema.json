@@ -2,9 +2,70 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "additionalProperties": false,
     "definitions": {
-        "Record<string,FileTask>": {
+        "FileTask": {
             "additionalProperties": false,
-            "title": "Record<string,FileTask>",
+            "properties": {
+                "cwd": {
+                    "description": "Working directory relative to the .porcrc",
+                    "title": "cwd",
+                    "type": "string"
+                },
+                "dependsOn": {
+                    "description": "Dependent task names.",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "dependsOn",
+                    "type": "array"
+                },
+                "exec": {
+                    "description": "Execution command, passed to the shell executable via the '-c' argument.",
+                    "title": "exec",
+                    "type": "string"
+                },
+                "quiet": {
+                    "description": "Do not write STDOUT to console?\nDefault: false",
+                    "title": "quiet",
+                    "type": "boolean"
+                },
+                "waitFor": {
+                    "$ref": "#/definitions/FileWaitFor",
+                    "description": "Optional configuration how long to wait after the process has started.\nDefault: unit after exit",
+                    "title": "waitFor"
+                }
+            },
+            "title": "FileTask",
+            "type": "object"
+        },
+        "FileWaitFor": {
+            "additionalProperties": false,
+            "properties": {
+                "killSignal": {
+                    "description": "Signal to use to terminate a process after a timeout",
+                    "enum": [
+                        "SIGKILL",
+                        "SIGTERM"
+                    ],
+                    "title": "killSignal",
+                    "type": "string"
+                },
+                "stderr": {
+                    "description": "Text to search for in stderr",
+                    "title": "stderr",
+                    "type": "string"
+                },
+                "stdout": {
+                    "description": "Text to search for in stdout",
+                    "title": "stdout",
+                    "type": "string"
+                },
+                "timeout": {
+                    "description": "Timeout after which the process is considered failing, while waiting for exit or missing stdout/stderr output.",
+                    "title": "timeout",
+                    "type": "number"
+                }
+            },
+            "title": "FileWaitFor",
             "type": "object"
         }
     },
@@ -24,9 +85,12 @@
             "type": "string"
         },
         "tasks": {
-            "$ref": "#/definitions/Record<string,FileTask>",
+            "additionalProperties": {
+                "$ref": "#/definitions/FileTask"
+            },
             "description": "Map of task configurations.",
-            "title": "tasks"
+            "title": "tasks",
+            "type": "object"
         },
         "verbose": {
             "description": "Print out status messages",

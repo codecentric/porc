@@ -16,7 +16,8 @@ export interface FileConfig {
     /**
      * Map of task configurations.
      */
-    tasks: Record<string, FileTask>
+    // eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style
+    tasks: { [name: string]: FileTask }
 
     /**
      * Support colorized output. Default: true
@@ -90,7 +91,8 @@ export interface CliOptions {
 export interface Config extends FileConfig {
     colors: boolean
     dryRun: boolean
-    tasks: Record<string, Task>
+    // eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style
+    tasks: { [name: string]: Task }
 
     rootDir: string
 }
