@@ -10,9 +10,9 @@ interface Execution {
 export class RunCommand {
     public executions: Record<string, Execution> = {}
 
-    constructor(private config: Config) {}
+    constructor (private readonly config: Config) {}
 
-    public async perform(tasks: string[]): Promise<void> {
+    public async perform (tasks: string[]): Promise<void> {
         this.checkThatTasksExist(tasks)
 
         await this.runTasksInParallel(tasks)
@@ -20,25 +20,25 @@ export class RunCommand {
         await this.waitForAllProcessesToExit()
     }
 
-    private async runTasksInParallel(tasks: string[]): Promise<void> {
+    private async runTasksInParallel (tasks: string[]): Promise<void> {
         // run all tasks in parallel, recursively going through dependencies
-        await Promise.all(tasks.map(task => this.runTask(task)))
+        await Promise.all(tasks.map(async task => await this.runTask(task)))
     }
 
-    private checkThatTasksExist(tasks: string[]) {
+    private checkThatTasksExist (tasks: string[]): void {
         tasks.forEach(task => this.findTask(task))
     }
 
-    private async waitForAllProcessesToExit() {
-        await Promise.all(Object.values(this.executions).map(exec => exec.exitPromise))
+    private async waitForAllProcessesToExit (): Promise<void> {
+        await Promise.all(Object.values(this.executions).map(async exec => await exec.exitPromise))
     }
 
-    private async runTask(task: string) {
+    private async runTask (task: string): Promise<void> {
         const taskConfig = this.findTask(task)
 
         if (taskConfig.dependsOn?.length) {
             await this.runTasksInParallel(taskConfig.dependsOn)
-            this.verbose(`== Successfully executed dependent tasks ${taskConfig.dependsOn?.join(',') || []}`, task, taskConfig.color)
+            this.verbose(`== Successfully executed dependent tasks ${(taskConfig.dependsOn || []).join(',')}`, task, taskConfig.color)
         }
 
         let execution = this.executions[task]
@@ -49,7 +49,7 @@ export class RunCommand {
         await execution.waitForPromise
     }
 
-    private executeTask(name: string, taskConfig: Task) {
+    private executeTask (name: string, taskConfig: Task): Execution {
         const statement = taskConfig.exec
         if (!statement) {
             return this.executeNothing()
@@ -57,55 +57,58 @@ export class RunCommand {
         return this.executeStatement(statement, name, taskConfig)
     }
 
-    private executeStatement(statement: string, name: string, taskConfig: Task) {
+    private executeStatement (statement: string, name: string, taskConfig: Task): Execution {
         this.verbose(`== Executing "${statement}"`, name, taskConfig.color)
         if (this.config.dryRun) {
             return this.executeNothing()
         }
-        let exitTimeout = (taskConfig.waitFor?.stderr || taskConfig.waitFor?.stdout) ? 0 : (taskConfig.waitFor?.timeout || 0)
+        const exitTimeout = (taskConfig.waitFor?.stderr ?? taskConfig.waitFor?.stdout) ? 0 : (taskConfig.waitFor?.timeout ?? 0)
         if (exitTimeout) {
-            this.verbose(`== Adding timeout of ${taskConfig.waitFor!.timeout}ms waiting for exit"`, name, taskConfig.color)
+            this.verbose(`== Adding timeout of ${taskConfig.waitFor!.timeout!}ms waiting for exit"`, name, taskConfig.color)
         }
+
         const exitPromise = exec(statement, {
             shell: this.config.shell,
             cwd: taskConfig.cwd,
             // wait for exit here
             timeout: exitTimeout,
-            killSignal: taskConfig.waitFor ? taskConfig.waitFor.killSignal : 'SIGTERM'
+            killSignal: (taskConfig.waitFor != null) ? taskConfig.waitFor.killSignal : 'SIGTERM'
         })
 
         let resolvedOrRejected = false
-        const waitForPromise = new Promise(async (resolve, reject) => {
-            if ((taskConfig.waitFor?.stdout || taskConfig.waitFor?.stderr) && taskConfig.waitFor?.timeout) {
+        const waitForPromise = new Promise((resolve, reject) => {
+            if ((taskConfig.waitFor?.stdout ?? taskConfig.waitFor?.stderr) && taskConfig.waitFor?.timeout) {
                 this.verbose(`== Adding timeout of ${taskConfig.waitFor.timeout}ms waiting for output"`, name, taskConfig.color)
                 setTimeout(() => {
                     if (!resolvedOrRejected) {
                         resolvedOrRejected = true
-                        this.verbose(`== Timed out after ${taskConfig.waitFor!.timeout}ms waiting for output"`, name, taskConfig.color)
+                        this.verbose(`== Timed out after ${taskConfig.waitFor!.timeout!}ms waiting for output"`, name, taskConfig.color)
                         // TODO maybe still wait for the process to terminate with outputs here.
                         // TODO in that case, we might need a second timeout for logging a stale process and/or SIGKILLing it
-                        exitPromise.childProcess.kill(taskConfig.waitFor?.killSignal)
-                        reject(`Timeout running task "${name}". Killed via ${taskConfig.waitFor?.killSignal}.`)
+                        exitPromise.childProcess.kill(taskConfig.waitFor!.killSignal)
+                        reject(new Error(`Timeout running task "${name}". Killed via ${taskConfig.waitFor!.killSignal}.`))
                     }
                 }, taskConfig.waitFor.timeout)
             }
             exitPromise.childProcess.stdout?.on('data', (data: any) => {
-                if (!taskConfig.quiet) {
-                    this.writeToConsole(data, name, taskConfig.color)
-                }
-                if (!resolvedOrRejected && data?.includes(taskConfig.waitFor?.stdout)) {
-                    resolvedOrRejected = true
-                    resolve(undefined)
+                if (typeof data === 'string') {
+                    if (!taskConfig.quiet) {
+                        this.writeToConsole(data, name, taskConfig.color)
+                    }
+                    if (!resolvedOrRejected && taskConfig.waitFor?.stdout && data?.includes(taskConfig.waitFor.stdout)) {
+                        resolvedOrRejected = true
+                        resolve(undefined)
+                    }
                 }
             })
             exitPromise.childProcess.stderr?.on('data', (data: any) => {
                 this.writeToConsole(data, name, taskConfig.color, 'err')
-                if (!resolvedOrRejected && data?.includes(taskConfig.waitFor?.stderr)) {
+                if (!resolvedOrRejected && taskConfig.waitFor?.stderr && data?.includes(taskConfig.waitFor.stderr)) {
                     resolvedOrRejected = true
                     resolve(undefined)
                 }
             })
-            return await exitPromise.then(() => {
+            exitPromise.then(() => {
                 if (!resolvedOrRejected) {
                     resolve(undefined)
                 }
@@ -121,35 +124,35 @@ export class RunCommand {
         }
     }
 
-    private executeNothing() {
+    private executeNothing (): Execution {
         return {
             exitPromise: Promise.resolve(),
             waitForPromise: Promise.resolve()
         }
     }
 
-    private findTask(task: string): Task {
-        let taskConfig = this.config.tasks[task]
+    private findTask (task: string): Task {
+        const taskConfig = this.config.tasks[task]
         if (!taskConfig) {
             throw new Error(`Missing task ${task}`)
         }
         return taskConfig
     }
 
-    private verbose(text: string, taskName: string, color: COLOR) {
+    private verbose (text: string, taskName: string, color: COLOR): void {
         if (this.config.verbose) {
             this.writeToConsole(text, taskName, color)
         }
     }
 
-    private writeToConsole(data: string, name: string, color: COLOR, logger: 'out' | 'err' = 'out') {
+    private writeToConsole (data: string, name: string, color: COLOR, logger: 'out' | 'err' = 'out'): void {
         const lines = data.split('\n')
-        let lastLineIndex = lines.length - 1
+        const lastLineIndex = lines.length - 1
         const withoutLastLine = lines[lastLineIndex] === '' ? lines.slice(0, lastLineIndex) : lines
-        const log = logger == 'out' ? console.log : console.error
+        const log = logger === 'out' ? console.log : console.error
         withoutLastLine.forEach((line: string) => {
             if (this.config.colors) {
-                const coloredLine = logger == 'out' ? line : red(line)
+                const coloredLine = logger === 'out' ? line : red(line)
                 log(color(name + ': ') + coloredLine)
             } else {
                 log(`${name}: ${line}`)

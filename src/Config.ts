@@ -3,7 +3,7 @@ import fs from 'fs'
 import { enable as enableColors, black, blue, cyan, gray, green, magenta, red, white, yellow } from 'colors/safe'
 import path from 'path'
 
-const COLORS = [ red, green, yellow, blue, magenta, cyan, gray, black, white] as const
+const COLORS = [red, green, yellow, blue, magenta, cyan, gray, black, white] as const
 export type COLOR = typeof COLORS[number]
 
 export interface FileConfig {
@@ -16,6 +16,7 @@ export interface FileConfig {
     /**
      * Map of task configurations.
      */
+    // eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style
     tasks: { [name: string]: FileTask }
 
     /**
@@ -90,6 +91,7 @@ export interface CliOptions {
 export interface Config extends FileConfig {
     colors: boolean
     dryRun: boolean
+    // eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style
     tasks: { [name: string]: Task }
 
     rootDir: string
@@ -105,10 +107,10 @@ export interface WaitFor extends FileWaitFor {
     killSignal: 'SIGTERM' | 'SIGKILL'
 }
 
-export async function createConfiguration(options: CliOptions, tasks?: string[]): Promise<Config> {
+export async function createConfiguration (options: CliOptions, tasks?: string[]): Promise<Config> {
     const configObj = findConfig.obj('.porcrc')
-    if (!configObj) {
-        throw new Error(`Didn't find any .porcrc in the current working directory or any parent directory.`)
+    if (configObj == null) {
+        throw new Error('Didn\'t find any .porcrc in the current working directory or any parent directory.')
     }
     const rootDir = configObj.dir
     const configFile = configObj.path
@@ -119,23 +121,25 @@ export async function createConfiguration(options: CliOptions, tasks?: string[])
         ...fileConfig,
         tasks: Object.keys(fileConfig.tasks).reduce((fullTasks: Record<string, Task>, key, index) => {
             const fileTask = fileConfig.tasks[key]
-            let quiet = fileTask.quiet ? true : (focus && tasks && !tasks.includes(key)) || false
+            const quiet = fileTask.quiet === true ? true : (focus && (tasks != null) && !tasks.includes(key)) || false
             fullTasks[key] = {
                 ...fileTask,
                 color: COLORS[index % COLORS.length],
-                cwd: fileTask.cwd ? path.join(rootDir, fileTask.cwd) : rootDir,
+                cwd: fileTask.cwd !== undefined ? path.join(rootDir, fileTask.cwd) : rootDir,
                 quiet,
-                waitFor: fileTask.waitFor ? {
-                    ...fileTask.waitFor,
-                    killSignal: fileTask.waitFor.killSignal || 'SIGTERM',
-                } : undefined
+                waitFor: (fileTask.waitFor != null)
+                    ? {
+                        ...fileTask.waitFor,
+                        killSignal: fileTask.waitFor?.killSignal ?? 'SIGTERM'
+                    }
+                    : undefined
             }
             return fullTasks
         }, {}),
         focus,
-        verbose: options.verbose ? true : (fileConfig.verbose || false),
+        verbose: options.verbose === true ? true : fileConfig.verbose === true,
         colors: options.colors !== undefined ? options.colors : (fileConfig.colors !== undefined ? fileConfig.colors : true),
-        dryRun: options.dryRun || false,
+        dryRun: options.dryRun === true,
         rootDir
     }
     checkConfig(config)
@@ -145,13 +149,12 @@ export async function createConfiguration(options: CliOptions, tasks?: string[])
     return config
 }
 
-function checkConfig(config: Config) {
+function checkConfig (config: Config): void {
     Object.entries(config.tasks).forEach(([name, task]) => {
         task.dependsOn?.forEach(dependency => {
-            if (!config.tasks[dependency]) {
-                throw new Error(`Task "${name}" has unknown dependency "${dependency}"` )
+            if (config.tasks[dependency] == null) {
+                throw new Error(`Task "${name}" has unknown dependency "${dependency}"`)
             }
         })
     })
 }
-

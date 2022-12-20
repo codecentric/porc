@@ -1,6 +1,8 @@
+
+/* eslint-disable @typescript-eslint/triple-slash-reference */
+
 /// <reference types="chai" />
 /// <reference types="sinon" />
-
 
 declare module 'sinon-chai-in-order' {
     global {
@@ -12,7 +14,7 @@ declare module 'sinon-chai-in-order' {
         }
     }
 
-    const sinonChaiInOrder: Chai.ChaiPlugin;
+    const sinonChaiInOrder: Chai.ChaiPlugin
     namespace sinonChaiInOrder { }
-    export = sinonChaiInOrder;
+    export = sinonChaiInOrder
 }
