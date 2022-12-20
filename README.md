@@ -53,7 +53,7 @@ The documentation is still in progress. Please check the [schema](https://github
 
 Calling `porc` without arguments or with `-h` or `--help` returns a help text: 
 
-```sh
+```
 $ porc --help
 
 Usage: porc [options] [command]
