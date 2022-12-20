@@ -1,9 +1,11 @@
 import { expect } from 'chai'
 import { RunCommand } from './RunCommand'
-import { blue, green, red, yellow } from 'colors/safe'
+import chalk from 'chalk'
 import path from 'path'
 import sinon, { SinonStub, stub } from 'sinon'
 import { Config } from './Config'
+
+const { blue, green, red, yellow } = chalk
 
 describe('RunCommand', () => {
     let config: Config

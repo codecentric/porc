@@ -885,13 +885,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"colors@npm:^1.4.0":
-  version: 1.4.0
-  resolution: "colors@npm:1.4.0"
-  checksum: 98aa2c2418ad87dedf25d781be69dc5fc5908e279d9d30c34d8b702e586a0474605b3a189511482b9d5ed0d20c867515d22749537f7bc546256c6014f3ebdcec
-  languageName: node
-  linkType: hard
-
 "commander@npm:^9.4.1":
   version: 9.4.1
   resolution: "commander@npm:9.4.1"
@@ -2808,8 +2801,8 @@ __metadata:
     chai: ^4.3.7
     chai-as-promised: ^7.1.1
     chai-like: ^1.1.1
+    chalk: ^4.0.0
     child-process-promise: ^2.2.1
-    colors: ^1.4.0
     commander: ^9.4.1
     eslint: ^8.0.1
     eslint-config-prettier: ^8.5.0
