@@ -1,6 +1,6 @@
 # porc
 
-`porc` is a small cli tool to start multiple dependent processes in parallel. 
+`porc` (**P**rocess **Orc**hestrator) is a small cli tool to start multiple dependent processes in parallel. 
 Primary use case is starting multiple dependent web services for local development.
 
 ## Installation
