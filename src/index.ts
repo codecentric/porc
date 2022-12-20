@@ -31,18 +31,17 @@ program
         console.log(JSON.stringify(config, undefined, 2))
     })
 
-
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
 program.on('command:*', async () => {
     const tasks = program.args
-    if (tasks && tasks.length) {
+    if (tasks.length > 0) {
         // fallback: try to run args as tasks
         const options = program.optsWithGlobals()
         const config = await createConfiguration(options, tasks)
         await new RunCommand(config).perform(tasks).catch(console.error)
     }
-});
+})
 
-;(async () => {
+void (async () => {
     await program.parseAsync(process.argv)
 })()
-

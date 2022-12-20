@@ -72,7 +72,6 @@ describe('RunCommand', () => {
     })
 
     describe('console output', () => {
-
         it('should write the output to stdout', async () => {
             await command.perform(['test'])
 

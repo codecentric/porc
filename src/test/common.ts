@@ -11,14 +11,14 @@ chai.use(chaiAsPromised)
 chai.should()
 
 like.extend({
-    match: function(object, expected) {
-        return typeof object === 'string' && expected instanceof RegExp;
+    match: function (object, expected) {
+        return typeof object === 'string' && expected instanceof RegExp
     },
-    assert: function(object, expected) {
-        return expected.test(object);
+    assert: function (object, expected) {
+        return expected.test(object)
     }
-});
-chai.use(like);
+})
+chai.use(like)
 
 afterEach(() => {
     sinon.restore()
