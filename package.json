@@ -16,6 +16,7 @@
   "packageManager": "yarn@3.3.0",
   "bin": "./lib/index.js",
   "scripts": {
+    "prepare": "husky install",
     "build": "yarn compile && yarn schema",
     "compile": "tsc",
     "test": "mocha 'src/**/*.spec.ts'",
@@ -51,6 +52,7 @@
     "eslint-plugin-n": "^15.0.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-promise": "^6.0.0",
+    "husky": "^8.0.2",
     "mocha": "^10.2.0",
     "prettier": "^2.8.1",
     "sinon": "^15.0.1",

@@ -1893,6 +1893,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"husky@npm:^8.0.2":
+  version: 8.0.2
+  resolution: "husky@npm:8.0.2"
+  bin:
+    husky: lib/bin.js
+  checksum: e101656fcb56163d610488f186448c78b132626aa427094489d886ce9374955a90274912b0f3a34af3326eaa74977883b032e5f701d7aaf4554daa5a7931be43
+  languageName: node
+  linkType: hard
+
 "iconv-lite@npm:^0.6.2":
   version: 0.6.3
   resolution: "iconv-lite@npm:0.6.3"
@@ -2810,6 +2819,7 @@ __metadata:
     eslint-plugin-prettier: ^4.2.1
     eslint-plugin-promise: ^6.0.0
     find-config: ^1.0.0
+    husky: ^8.0.2
     mocha: ^10.2.0
     prettier: ^2.8.1
     sinon: ^15.0.1
