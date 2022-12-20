@@ -28,6 +28,9 @@
                 "stdout": "Done",
                 "timeout": 500
             }
+        },
+        "long-running": {
+            "exec": "nc -l 9876"
         }
     }
 }
