@@ -1,6 +1,6 @@
 import { COLOR, Config, Task } from './Config'
 import { exec } from 'child-process-promise'
-import { red } from 'colors/safe'
+import chalk from 'chalk'
 
 interface Execution {
     exitPromise: Promise<unknown>
@@ -152,7 +152,7 @@ export class RunCommand {
         const log = logger === 'out' ? console.log : console.error
         withoutLastLine.forEach((line: string) => {
             if (this.config.colors) {
-                const coloredLine = logger === 'out' ? line : red(line)
+                const coloredLine = logger === 'out' ? line : chalk.red(line)
                 log(color(name + ': ') + coloredLine)
             } else {
                 log(`${name}: ${line}`)

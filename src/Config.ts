@@ -1,9 +1,11 @@
 import findConfig from 'find-config'
 import fs from 'fs'
-import { enable as enableColors, black, blue, cyan, gray, green, magenta, red, white, yellow } from 'colors/safe'
+import chalk from 'chalk'
 import path from 'path'
 
+const { black, blue, cyan, gray, green, magenta, red, white, yellow } = chalk
 const COLORS = [red, green, yellow, blue, magenta, cyan, gray, black, white] as const
+
 export type COLOR = typeof COLORS[number]
 
 export interface FileConfig {
@@ -143,9 +145,6 @@ export async function createConfiguration (options: CliOptions, tasks?: string[]
         rootDir
     }
     checkConfig(config)
-    if (config.colors) {
-        enableColors()
-    }
     return config
 }
 
