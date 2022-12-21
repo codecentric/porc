@@ -1,10 +1,8 @@
 import findConfig from 'find-config'
 import fs from 'fs'
-import chalk from 'chalk'
 import path from 'path'
 
-const { black, blue, cyan, gray, green, magenta, red, white, yellow } = chalk
-const COLORS = [red, green, yellow, blue, magenta, cyan, gray, black, white] as const
+const COLORS = ['red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'gray', 'black', 'white']
 
 export type COLOR = typeof COLORS[number]
 
@@ -14,6 +12,11 @@ export interface FileConfig {
      * https://nodejs.org/api/child_process.html#child_processexeccommand-options-callback
      */
     shell?: string
+
+    /**
+     * Start a ui by default
+     */
+    ui?: boolean
 
     /**
      * Map of task configurations.

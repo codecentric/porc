@@ -31,6 +31,9 @@
         },
         "long-running": {
             "exec": "nc -l 9876"
+        },
+        "out1": {
+            "exec": "ping 127.0.0.1"
         }
     }
 }

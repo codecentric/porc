@@ -92,6 +92,11 @@
             "title": "tasks",
             "type": "object"
         },
+        "ui": {
+            "description": "Start a ui by default",
+            "title": "ui",
+            "type": "boolean"
+        },
         "verbose": {
             "description": "Print out status messages",
             "title": "verbose",

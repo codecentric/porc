@@ -2,6 +2,7 @@
 import { RunCommand } from './RunCommand'
 import { CliOptions, createConfiguration } from './Config'
 import { program } from 'commander'
+import { UI } from './ui'
 
 program
     .name('porc')
@@ -17,10 +18,17 @@ program
     .command('run')
     .argument('<tasks...>')
     .description('execute given tasks')
-    .action(async (tasks) => {
-        const options = program.optsWithGlobals()
-        const config = await createConfiguration(options, tasks)
-        return await new RunCommand(config).perform((tasks || []) as string[]).catch(console.error)
+    .option('--ui', 'start user interface')
+    .option('--no-ui', 'just render to console')
+    .action(async (tasks, opts) => {
+        const globals = program.optsWithGlobals()
+        const config = await createConfiguration({ ...globals, ...opts }, tasks)
+        const theTasks = (tasks || []) as string[]
+        const command = new RunCommand(config)
+        if (opts.ui) {
+            return await new UI(command).perform(theTasks)
+        }
+        await command.perform(theTasks).catch(console.error)
     })
 
 program

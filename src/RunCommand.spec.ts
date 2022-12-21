@@ -1,51 +1,49 @@
 import { expect } from 'chai'
 import { RunCommand } from './RunCommand'
-import chalk from 'chalk'
 import path from 'path'
-import sinon, { SinonStub, stub } from 'sinon'
+import sinon, { stub } from 'sinon'
 import { Config } from './Config'
-
-const { blue, green, red, yellow } = chalk
+import { Console } from './Console'
 
 describe('RunCommand', () => {
     let config: Config
     let command: RunCommand
 
-    let consoleLog: SinonStub
-    let consoleError: SinonStub
+    let console: Console
 
     beforeEach(() => {
-        consoleLog = stub(console, 'log')
-        consoleError = stub(console, 'error')
+        console = {
+            write: stub()
+        }
 
         config = {
             tasks: {
                 test: {
                     exec: 'echo Test',
-                    color: red,
+                    color: 'red',
                     quiet: false
                 },
                 first: {
                     exec: 'echo First',
-                    color: blue,
+                    color: 'blue',
                     quiet: false
                 },
                 second: {
                     dependsOn: ['first'],
                     exec: 'echo Second',
-                    color: green,
+                    color: 'green',
                     quiet: false
                 },
                 third: {
                     dependsOn: ['first'],
                     exec: 'echo Third',
-                    color: green,
+                    color: 'green',
                     quiet: false
                 },
                 fourth: {
                     dependsOn: ['second', 'third'],
                     exec: 'echo Fourth',
-                    color: yellow,
+                    color: 'yellow',
                     quiet: false
                 }
             },
@@ -55,7 +53,8 @@ describe('RunCommand', () => {
             rootDir: path.resolve('.')
         }
 
-        command = new RunCommand(config)
+        command = new RunCommand(config, console)
+        command.console = console
     })
 
     it('should execute the given command', async () => {
@@ -66,66 +65,48 @@ describe('RunCommand', () => {
 
     it('should not execute the given command in dry-run', async () => {
         config.dryRun = true
-        command = new RunCommand(config)
+        command = new RunCommand(config, console)
 
         await command.perform(['test'])
 
-        expect(consoleLog).to.not.have.been.called
+        expect(console.write).to.not.have.been.called
     })
 
     describe('console output', () => {
         it('should write the output to stdout', async () => {
             await command.perform(['test'])
 
-            expect(consoleLog).to.have.been.calledWith(red('test: ') + 'Test')
+            expect(console.write).to.have.been.calledWith('Test\n', 'test', 'red')
         })
 
         it('should write the error output in red color to stderr', async () => {
             config.tasks.test.exec = 'echo Test >&2'
-            command = new RunCommand(config)
+            command = new RunCommand(config, console)
 
             await command.perform(['test'])
 
-            expect(consoleLog).to.not.have.been.called
-            expect(consoleError).to.have.been.calledWith(red('test: ') + red('Test'))
-        })
-
-        it('should write the output without colors', async () => {
-            config.colors = false
-            command = new RunCommand(config)
-            await command.perform(['test'])
-
-            expect(consoleLog).to.have.been.calledWith('test: Test')
-        })
-
-        it('should write the error output without colors', async () => {
-            config.tasks.test.exec = 'echo Test >&2'
-            config.colors = false
-            command = new RunCommand(config)
-            await command.perform(['test'])
-
-            expect(consoleError).to.have.been.calledWith('test: Test')
+            expect(console.write).to.have.been.calledWith('Test\n', 'test', 'red', 'err')
         })
 
         describe('when quiet', () => {
             it('should not write to stdout', async () => {
                 config.tasks.test.quiet = true
-                command = new RunCommand(config)
+                command = new RunCommand(config, console)
 
                 await command.perform(['test'])
 
-                expect(consoleLog).to.not.have.been.called
+                expect(console.write).to.not.have.been.called
             })
 
             it('should still write to stderr', async () => {
                 config.tasks.test.quiet = true
                 config.tasks.test.exec = 'echo Test >&2'
                 config.colors = false
-                command = new RunCommand(config)
+                command = new RunCommand(config, console)
 
                 await command.perform(['test'])
 
-                expect(consoleError).to.have.been.calledWith('test: Test')
+                expect(console.write).to.have.been.calledWith('Test\n', 'test', 'red', 'err')
             })
         })
     })
@@ -134,32 +115,31 @@ describe('RunCommand', () => {
         it('should execute first then second task', async () => {
             await command.perform(['second'])
 
-            expect(consoleLog).to.have.been.calledWith(`${blue('first: ')}First`)
-                .subsequently.calledWith(`${green('second: ')}Second`)
+            expect(console.write).to.have.been.calledWith('First\n', 'first', 'blue')
+                .subsequently.calledWith('Second\n', 'second', 'green')
         })
 
         it('should not execute the second task if the first fails', async () => {
             config.tasks.first.exec = 'unknown-not-found-command'
             config.colors = false
-            command = new RunCommand(config)
+            command = new RunCommand(config, console)
 
             await command.perform(['second']).should.be.rejected
 
-            expect(consoleError).to.have.been.calledWith(sinon.match(/first: \/bin\/sh: .*unknown-not-found-command.*/))
-            expect(consoleLog).to.not.have.been.called
+            expect(console.write).to.have.been.calledWith(sinon.match(/\/bin\/sh: .*unknown-not-found-command.*/), 'first', 'blue', 'err')
         })
 
         it('should execute multiple refs to the same task one once', async () => {
             config.colors = false
-            command = new RunCommand(config)
+            command = new RunCommand(config, console)
 
             await command.perform(['fourth'])
 
-            expect(consoleLog).to.have.callCount(4)
-            expect(consoleLog).to.have.been.calledWith('first: First')
-                .subsequently.have.been.calledWith(sinon.match('second: Second').or(sinon.match('third: Third')))
-                .subsequently.have.been.calledWith(sinon.match('second: Second').or(sinon.match('third: Third')))
-                .subsequently.have.been.calledWith('fourth: Fourth')
+            expect(console.write).to.have.callCount(4)
+            expect(console.write).to.have.been.calledWith('First\n', 'first')
+                .subsequently.have.been.calledWith(sinon.match('Second\n').or(sinon.match('Third\n')), sinon.match('second').or(sinon.match('third')))
+                .subsequently.have.been.calledWith(sinon.match('Second\n').or(sinon.match('Third\n')), sinon.match('second').or(sinon.match('third')))
+                .subsequently.have.been.calledWith('Fourth\n', 'fourth')
         })
     })
 })

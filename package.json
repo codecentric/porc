@@ -28,7 +28,8 @@
     "chalk": "^4.0.0",
     "child-process-promise": "^2.2.1",
     "commander": "^9.4.1",
-    "find-config": "^1.0.0"
+    "find-config": "^1.0.0",
+    "reblessed": "^0.1.84"
   },
   "devDependencies": {
     "@types/chai": "^4.3.4",

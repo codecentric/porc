@@ -1,7 +1,8 @@
 import { COLOR, Config, Task } from './Config'
 import { exec } from 'child-process-promise'
-import chalk from 'chalk'
 import { ChildProcess } from 'child_process'
+import { TextConsole } from './TextConsole'
+import { Console } from './Console'
 
 interface Execution {
     task: Task
@@ -11,9 +12,6 @@ interface Execution {
 }
 
 class InterruptedError extends Error {
-    constructor (message: string, private readonly taskName: string) {
-        super(message)
-    }
 }
 
 export class RunCommand {
@@ -21,7 +19,7 @@ export class RunCommand {
 
     private interrupted = false
 
-    constructor (private readonly config: Config) {}
+    constructor (private readonly config: Config, public console: Console = new TextConsole(config.colors)) {}
 
     public async perform (tasks: string[]): Promise<void> {
         this.checkThatTasksExist(tasks)
@@ -141,7 +139,7 @@ export class RunCommand {
             exitPromise.childProcess.stdout?.on('data', (data: any) => {
                 if (typeof data === 'string') {
                     if (!taskConfig.quiet) {
-                        this.writeToConsole(data, name, taskConfig.color)
+                        this.console.write(data, name, taskConfig.color)
                     }
                     if (!resolvedOrRejected && taskConfig.waitFor?.stdout && data?.includes(taskConfig.waitFor.stdout)) {
                         resolvedOrRejected = true
@@ -150,7 +148,7 @@ export class RunCommand {
                 }
             })
             exitPromise.childProcess.stderr?.on('data', (data: any) => {
-                this.writeToConsole(data, name, taskConfig.color, 'err')
+                this.console.write(data, name, taskConfig.color, 'err')
                 if (!resolvedOrRejected && taskConfig.waitFor?.stderr && data?.includes(taskConfig.waitFor.stderr)) {
                     resolvedOrRejected = true
                     resolve(undefined)
@@ -164,8 +162,8 @@ export class RunCommand {
             }).catch((err) => {
                 if (!resolvedOrRejected) {
                     if (this.interrupted) {
-                        this.writeToConsole('Task has been interrupted', name, taskConfig.color, 'err')
-                        reject(new InterruptedError('Process has beeen interrupted', name))
+                        this.console.write('Task has been interrupted', name, taskConfig.color, 'err')
+                        reject(new InterruptedError('Process has beeen interrupted'))
                     } else {
                         reject(err)
                     }
@@ -199,22 +197,7 @@ export class RunCommand {
 
     private verbose (text: string, taskName: string, color: COLOR): void {
         if (this.config.verbose) {
-            this.writeToConsole(text, taskName, color)
+            this.console.write(text, taskName, color)
         }
-    }
-
-    private writeToConsole (data: string, name: string, color: COLOR, logger: 'out' | 'err' = 'out'): void {
-        const lines = data.split('\n')
-        const lastLineIndex = lines.length - 1
-        const withoutLastLine = lines[lastLineIndex] === '' ? lines.slice(0, lastLineIndex) : lines
-        const log = logger === 'out' ? console.log : console.error
-        withoutLastLine.forEach((line: string) => {
-            if (this.config.colors) {
-                const coloredLine = logger === 'out' ? line : chalk.red(line)
-                log(color(name + ': ') + coloredLine)
-            } else {
-                log(`${name}: ${line}`)
-            }
-        })
     }
 }

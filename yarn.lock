@@ -2815,6 +2815,7 @@ __metadata:
     husky: ^8.0.2
     mocha: ^10.2.0
     prettier: ^2.8.1
+    reblessed: ^0.1.84
     sinon: ^15.0.1
     sinon-chai: ^3.7.0
     sinon-chai-in-order: ^0.1.0
@@ -2922,6 +2923,15 @@ __metadata:
   dependencies:
     picomatch: ^2.2.1
   checksum: 1ced032e6e45670b6d7352d71d21ce7edf7b9b928494dcaba6f11fba63180d9da6cd7061ebc34175ffda6ff529f481818c962952004d273178acd70f7059b320
+  languageName: node
+  linkType: hard
+
+"reblessed@npm:^0.1.84":
+  version: 0.1.84
+  resolution: "reblessed@npm:0.1.84"
+  bin:
+    reblessed: bin/tput.js
+  checksum: 44e03e15c04b985e96699d7623a0b399b0160c7095651aa6dd554e58bd540ba348ab7728401f7d5c5f26c05a46342c94c9c0c8cfeef2cfec35b6018838a1b7a4
   languageName: node
   linkType: hard
 
