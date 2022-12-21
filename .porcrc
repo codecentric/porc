@@ -1,6 +1,7 @@
 {
     "$schema": "./porc-schema.json",
     "verbose": false,
+    "dark": true,
     "tasks": {
         "shared": {
             "exec": "echo Shared"
@@ -33,6 +34,9 @@
             "exec": "nc -l 9876"
         },
         "out1": {
+            "exec": "ping 127.0.0.1"
+        },
+        "out2": {
             "exec": "ping 127.0.0.1"
         }
     }

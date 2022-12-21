@@ -4,6 +4,11 @@ import path from 'path'
 
 const COLORS = ['red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'gray', 'black', 'white']
 
+const EXCLUDE_COLORS = {
+    dark: ['black', 'blue'],
+    light: ['white', 'yellow']
+}
+
 export type COLOR = typeof COLORS[number]
 
 export interface FileConfig {
@@ -14,7 +19,14 @@ export interface FileConfig {
     shell?: string
 
     /**
-     * Start a ui by default
+     * Use colors fitting for dark or light backgrounds..
+     * Default: 'dark'
+     */
+    theme?: 'dark' | 'light'
+
+    /**
+     * Start the UI.
+     * Default: false
      */
     ui?: boolean
 
@@ -95,6 +107,11 @@ export interface CliOptions {
 
 export interface Config extends FileConfig {
     colors: boolean
+
+    theme: 'dark' | 'light'
+
+    colorPalette: string[]
+
     dryRun: boolean
     // eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style
     tasks: { [name: string]: Task }
@@ -121,7 +138,13 @@ export async function createConfiguration (options: CliOptions, tasks?: string[]
     const configFile = configObj.path
     const fileConfig: FileConfig = JSON.parse(await fs.promises.readFile(configFile, 'utf-8'))
 
+    const verbose = options.verbose === true ? true : fileConfig.verbose === true
     const focus = options.focus !== undefined ? options.focus : (fileConfig.focus !== undefined ? fileConfig.focus : true)
+
+    const colors = options.colors !== undefined ? options.colors : (fileConfig.colors !== undefined ? fileConfig.colors : true)
+    const theme = fileConfig.theme ?? 'dark'
+    const colorPalette = COLORS.filter(col => !EXCLUDE_COLORS[theme].includes(col))
+
     const config = {
         ...fileConfig,
         tasks: Object.keys(fileConfig.tasks).reduce((fullTasks: Record<string, Task>, key, index) => {
@@ -129,7 +152,7 @@ export async function createConfiguration (options: CliOptions, tasks?: string[]
             const quiet = fileTask.quiet === true ? true : (focus && (tasks != null) && !tasks.includes(key)) || false
             fullTasks[key] = {
                 ...fileTask,
-                color: COLORS[index % COLORS.length],
+                color: colorPalette[index % colorPalette.length],
                 cwd: fileTask.cwd !== undefined ? path.join(rootDir, fileTask.cwd) : rootDir,
                 quiet,
                 waitFor: (fileTask.waitFor != null)
@@ -142,8 +165,10 @@ export async function createConfiguration (options: CliOptions, tasks?: string[]
             return fullTasks
         }, {}),
         focus,
-        verbose: options.verbose === true ? true : fileConfig.verbose === true,
-        colors: options.colors !== undefined ? options.colors : (fileConfig.colors !== undefined ? fileConfig.colors : true),
+        verbose,
+        colors,
+        theme,
+        colorPalette,
         dryRun: options.dryRun === true,
         rootDir
     }

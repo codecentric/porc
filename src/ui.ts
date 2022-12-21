@@ -26,13 +26,6 @@ export class UI implements Console {
             tags: true,
             border: {
                 type: 'line'
-            },
-            style: {
-                fg: 'white',
-                bg: 'black',
-                border: {
-                    fg: '#f0f0f0'
-                }
             }
         })
 

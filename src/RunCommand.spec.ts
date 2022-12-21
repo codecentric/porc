@@ -48,6 +48,8 @@ describe('RunCommand', () => {
                 }
             },
             colors: true,
+            theme: 'dark',
+            colorPalette: ['red', 'green', 'blue', 'yellow'],
             dryRun: false,
             focus: false,
             rootDir: path.resolve('.')
