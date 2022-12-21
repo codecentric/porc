@@ -15,7 +15,7 @@ class InterruptedError extends Error {
 }
 
 export class RunCommand {
-    public executions: Record<string, Execution> = {}
+    public executions = new Map<string, Execution>()
 
     private interrupted = false
 
@@ -59,7 +59,7 @@ export class RunCommand {
     }
 
     private async waitForAllProcessesToExit (): Promise<void> {
-        await Promise.all(Object.values(this.executions).map(async exec => await exec.exitPromise))
+        await Promise.all(Array.from(this.executions.values()).map(async exec => await exec.exitPromise))
     }
 
     public handleSignal (signal: 'SIGTERM' | 'SIGINT' | 'SIGQUIT'): void {
@@ -69,6 +69,23 @@ export class RunCommand {
         } else {
             this.sendSignalToChildProcesses('SIGKILL')
         }
+    }
+
+    public async restartTask (search: string): Promise<void> {
+        const tasks = Array.from(this.executions.keys()).filter(exec => exec.startsWith(search))
+        if (tasks.length === 1) {
+            const taskName = tasks[0]
+            const exec = this.executions.get(taskName)
+            if (exec?.childProcess) {
+                exec.childProcess?.kill('SIGTERM')
+                await exec.exitPromise.catch(() => undefined) // TODO do something in case of failures?
+
+                this.executions.delete(taskName)
+                return await this.runTask(taskName)
+            }
+            throw new Error(`task ${taskName} is not running`)
+        }
+        throw new Error(`Which task did you mean? ${tasks.join(',')}...`)
     }
 
     private sendSignalToChildProcesses (signal: 'SIGTERM' | 'SIGINT' | 'SIGQUIT' | 'SIGKILL'): void {
@@ -86,10 +103,10 @@ export class RunCommand {
             this.verbose(`== Successfully executed dependent tasks ${(taskConfig.dependsOn || []).join(',')}`, task, taskConfig.color)
         }
 
-        let execution = this.executions[task]
+        let execution = this.executions.get(task)
         if (!execution) {
             execution = this.executeTask(task, taskConfig)
-            this.executions[task] = execution
+            this.executions.set(task, execution)
         }
         await execution.waitForPromise
     }
@@ -155,7 +172,7 @@ export class RunCommand {
                 }
             })
             exitPromise.then(() => {
-                delete this.executions[name]?.childProcess
+                delete this.executions.get(name)?.childProcess
                 if (!resolvedOrRejected) {
                     resolve(undefined)
                 }

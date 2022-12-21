@@ -62,7 +62,7 @@ describe('RunCommand', () => {
     it('should execute the given command', async () => {
         await command.perform(['test'])
 
-        expect(command.executions.test).to.be.ok
+        expect(command.executions.get('test')).to.be.ok
     })
 
     it('should not execute the given command in dry-run', async () => {

@@ -12,17 +12,16 @@ export class UI implements Console {
 
     constructor (private readonly cmd: RunCommand) {
         this.screen = blessed.screen({
-            smartCSR: true
+            smartCSR: true,
+            title: 'porc'
         })
-
-        this.screen.title = 'porc'
 
         // Create a box perfectly centered horizontally and vertically.
         this.box = blessed.box({
-            top: '1',
-            left: '1',
-            width: '100%',
-            height: '100%',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
             scrollable: true,
             alwaysScroll: true,
             tags: true,
@@ -33,36 +32,40 @@ export class UI implements Console {
 
         this.screen.append(this.box)
 
-        this.screen.key(['escape', 'q'], () => {
+        this.box.key(['escape', 'q'], () => {
             this.exit()
         })
 
-        this.screen.key(['C-c'], () => {
+        this.box.key(['C-c'], () => {
             this.cmd.handleSignal('SIGTERM')
         })
 
         // Scrolling
 
-        this.screen.key(['b'], () => {
+        this.box.key(['b'], () => {
             this.scrollBy(-this.box.height + 2)
         })
-        this.screen.key(['n'], () => {
+        this.box.key(['n'], () => {
             this.scrollBy(this.box.height - 2)
         })
-        this.screen.key(['up'], () => {
+        this.box.key(['up'], () => {
             this.scrollBy(-1)
         })
-        this.screen.key(['down'], () => {
+        this.box.key(['down'], () => {
             this.scrollBy(1)
         })
-        this.screen.key(['g'], () => {
+        this.box.key(['g'], () => {
             this.scrollToEnd()
         })
 
         // Keyboard Help
 
-        this.screen.key(['h'], () => {
+        this.box.key(['h'], () => {
             // TODO this.showHelp()
+        })
+
+        this.box.key([':'], () => {
+            this.startCommandInput()
         })
 
         this.box.focus()
@@ -109,6 +112,64 @@ export class UI implements Console {
     private scrollToEnd (): void {
         this.box.setScrollPerc(100)
         this.autoScroll = true
+        this.screen.render()
+    }
+
+    private startCommandInput (): void {
+        this.box.bottom = 1
+
+        const colon = blessed.text({
+            parent: this.screen,
+            left: 0,
+            bottom: 0,
+            content: ':'
+        })
+        const input = blessed.textarea({
+            parent: this.screen,
+            name: 'command',
+            bottom: 0,
+            left: 1,
+            height: 1,
+            width: 'shrink',
+            content: ':',
+            inputOnFocus: true
+        })
+
+        const closeCommand = (): void => {
+            this.screen.remove(colon)
+            this.screen.remove(input)
+            this.box.bottom = 0
+            this.box.focus()
+            this.screen.render()
+        }
+
+        input.key(['escape'], () => {
+            closeCommand()
+        })
+
+        input.key(['enter'], () => {
+            const command = input.getText().trim()
+            this.write(`Command: "${String(command)}"`, '', 'red', 'err')
+            if (command.startsWith('r ')) {
+                const search = command.substring(2)
+                this.write(`Search: "${String(search)}"`, '', 'red', 'err')
+                void this.cmd.restartTask(search).then(() => {
+                    closeCommand()
+                }).catch((err) => {
+                    input.setContent(err.message)
+                    setTimeout(() => {
+                        closeCommand()
+                    }, 2000)
+                })
+            } else {
+                input.setContent(`Unknown command: "${String(command)}"`)
+                setTimeout(() => {
+                    closeCommand()
+                }, 2000)
+            }
+        })
+
+        input.focus()
         this.screen.render()
     }
 }
