@@ -8,6 +8,8 @@ export class UI implements Console {
 
     private readonly box: any
 
+    private autoScroll = true
+
     constructor (private readonly cmd: RunCommand) {
         this.screen = blessed.screen({
             smartCSR: true
@@ -31,8 +33,36 @@ export class UI implements Console {
 
         this.screen.append(this.box)
 
-        this.screen.key(['escape', 'q', 'C-c'], () => {
+        this.screen.key(['escape', 'q'], () => {
             this.exit()
+        })
+
+        this.screen.key(['C-c'], () => {
+            this.cmd.handleSignal('SIGTERM')
+        })
+
+        // Scrolling
+
+        this.screen.key(['b'], () => {
+            this.scrollBy(-this.box.height + 2)
+        })
+        this.screen.key(['n'], () => {
+            this.scrollBy(this.box.height - 2)
+        })
+        this.screen.key(['up'], () => {
+            this.scrollBy(-1)
+        })
+        this.screen.key(['down'], () => {
+            this.scrollBy(1)
+        })
+        this.screen.key(['g'], () => {
+            this.scrollToEnd()
+        })
+
+        // Keyboard Help
+
+        this.screen.key(['h'], () => {
+            // TODO this.showHelp()
         })
 
         this.box.focus()
@@ -55,12 +85,30 @@ export class UI implements Console {
         })
 
         // scroll to bottom
-        this.box.setScrollPerc(100)
+        if (this.autoScroll) {
+            this.box.setScrollPerc(100)
+        }
 
         this.screen.render()
     }
 
     private exit (): void {
         process.exit(0)
+    }
+
+    private scrollBy (lines: number): void {
+        if (lines < 0) {
+            this.autoScroll = false
+        } else if (this.box.getScrollPerc() === 100) {
+            this.autoScroll = true
+        }
+        this.box.scroll(lines)
+        this.screen.render()
+    }
+
+    private scrollToEnd (): void {
+        this.box.setScrollPerc(100)
+        this.autoScroll = true
+        this.screen.render()
     }
 }

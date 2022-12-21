@@ -73,7 +73,7 @@ export class RunCommand {
 
     private sendSignalToChildProcesses (signal: 'SIGTERM' | 'SIGINT' | 'SIGQUIT' | 'SIGKILL'): void {
         Object.entries(this.executions).forEach(([name, exec]) => {
-            this.verbose(`Sent ${signal} to task ${name}`, name, exec.task.color)
+            this.verbose(`== Sent ${signal} to task ${name}`, name, exec.task.color)
             exec.childProcess?.kill(signal)
         })
     }
@@ -162,7 +162,7 @@ export class RunCommand {
             }).catch((err) => {
                 if (!resolvedOrRejected) {
                     if (this.interrupted) {
-                        this.console.write('Task has been interrupted', name, taskConfig.color, 'err')
+                        this.console.write('== Task has been interrupted', name, taskConfig.color, 'err')
                         reject(new InterruptedError('Process has beeen interrupted'))
                     } else {
                         reject(err)
