@@ -92,8 +92,17 @@
             "title": "tasks",
             "type": "object"
         },
+        "theme": {
+            "description": "Use colors fitting for dark or light backgrounds..\nDefault: 'dark'",
+            "enum": [
+                "dark",
+                "light"
+            ],
+            "title": "theme",
+            "type": "string"
+        },
         "ui": {
-            "description": "Start a ui by default",
+            "description": "Start the UI.\nDefault: false",
             "title": "ui",
             "type": "boolean"
         },
