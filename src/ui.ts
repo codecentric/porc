@@ -40,6 +40,14 @@ export class UI implements Console {
             this.cmd.handleSignal('SIGTERM')
         })
 
+        this.box.key(['tab'], () => {
+            this.write('\n=== Process Status')
+            Array.from(this.cmd.executions.values()).forEach(exec => {
+                this.write(exec.status, exec.task)
+            })
+            this.write('==================')
+        })
+
         // Scrolling
 
         this.box.key(['b'], () => {
