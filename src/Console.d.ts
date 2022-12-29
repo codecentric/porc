@@ -1,5 +1,6 @@
-import { COLOR } from './Config'
+import { Task } from './Config'
 
 export interface Console {
-    write: (data: string, name: string, color: COLOR, logger: 'out' | 'err' = 'out') => void
+    write: (data: string, task?: Task, logger: 'out' | 'err' = 'out') => void
+    verbose: (data: string, task?: Task) => void
 }

@@ -1,5 +1,6 @@
 import chalk, { Chalk } from 'chalk'
 import { Console } from './Console'
+import { Config, Task } from './Config'
 
 const { black, blue, cyan, gray, green, magenta, red, white, yellow } = chalk
 
@@ -16,9 +17,10 @@ const TEXT_COLORS: Record<string, Chalk> = {
 } as const
 
 export class TextConsole implements Console {
-    constructor (private readonly colors: boolean) {}
+    constructor (private readonly colors: boolean, private readonly config: Config) {}
 
-    public write (data: string, name: string, color: string, logger: 'out' | 'err' = 'out'): void {
+    public write (data: string, task?: Task, logger: 'out' | 'err' = 'out'): void {
+        const { name, color } = task ?? { name: '', color: 'red' }
         const lines = data.split('\n')
         const lastLineIndex = lines.length - 1
         const withoutLastLine = lines[lastLineIndex] === '' ? lines.slice(0, lastLineIndex) : lines
@@ -27,10 +29,16 @@ export class TextConsole implements Console {
         withoutLastLine.forEach((line: string) => {
             if (this.colors) {
                 const coloredLine = logger === 'out' ? line : chalk.red(line)
-                log(chalkColor(name + ': ') + coloredLine)
+                log(name ? chalkColor(name + ': ') + coloredLine : coloredLine)
             } else {
-                log(`${name}: ${line}`)
+                log(name ? `${name}: ${line}` : line)
             }
         })
+    }
+
+    public verbose (data: string, task?: Task): void {
+        if (this.config.verbose) {
+            this.write(data, task, 'err')
+        }
     }
 }

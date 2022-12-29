@@ -1,17 +1,18 @@
 {
     "$schema": "./porc-schema.json",
     "verbose": false,
-    "dark": true,
+    "theme": "dark",
     "tasks": {
         "shared": {
             "exec": "echo Shared"
         },
         "first": {
             "dependsOn": ["shared"],
-            "exec": "echo Test >&2; sleep 2; echo Done",
+            "exec": "echo Test; sleep 2; echo Done >&2; echo Done 2",
             "quiet": true,
             "waitFor": {
-                "stderr": "Test",
+                "type": "console",
+                "text": "Test",
                 "timeout": 500
             }
         },
@@ -26,7 +27,8 @@
         "failingWithTimeout": {
             "exec": "echo Test; sleep 2; echo Done",
             "waitFor": {
-                "stdout": "Done",
+                "type": "console",
+                "text": "Done",
                 "timeout": 500
             }
         },

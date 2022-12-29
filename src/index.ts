@@ -26,7 +26,7 @@ program
         const theTasks = (tasks || []) as string[]
         const command = new RunCommand(config)
         if (opts.ui) {
-            return await new UI(command).perform(theTasks)
+            return await new UI(command, config).perform(theTasks)
         }
         await command.perform(theTasks).catch(console.error)
     })

@@ -73,20 +73,47 @@ export interface FileTask {
 
     /**
      * Optional configuration how long to wait after the process has started.
-     * Default: unit after exit
+     * If it's a number, it's a delay in ms.
+     * Default: 'exit' => unit after exit
      */
     waitFor?: FileWaitFor
 }
 
-interface FileWaitFor {
+export type FileWaitFor = FileWaitForConsole | FileWaitForMs | FileWaitForExit | undefined
+
+interface FileWaitForConsole {
+    type: 'console'
     /**
      * Text to search for in stdout
      */
-    stdout?: string
+    text: string
     /**
-     * Text to search for in stderr
+     * Timeout after which the process is considered failing, while waiting for exit or missing stdout/stderr output.
      */
-    stderr?: string
+    timeout?: number
+
+    /**
+     * Signal to use to terminate a process after a timeout
+     */
+    killSignal?: 'SIGTERM' | 'SIGKILL'
+}
+
+interface FileWaitForMs {
+    type: 'ms'
+    /**
+     * Delay to wait after startup before starting followup services
+     */
+    delay: number
+
+    /**
+     * Signal to use to terminate a process after a timeout
+     */
+    killSignal?: 'SIGTERM' | 'SIGKILL'
+}
+
+interface FileWaitForExit {
+    type: 'exit'
+
     /**
      * Timeout after which the process is considered failing, while waiting for exit or missing stdout/stderr output.
      */
@@ -117,16 +144,57 @@ export interface Config extends FileConfig {
     tasks: { [name: string]: Task }
 
     rootDir: string
+
+    verbose: boolean
+
+    focus: boolean
 }
 
 export interface Task extends FileTask {
+    name: string
     color: COLOR
     quiet: boolean
-    waitFor?: WaitFor
+    waitFor: WaitForConsole | WaitForMs | WaitForExit
 }
 
-export interface WaitFor extends FileWaitFor {
+export type WaitFor = WaitForConsole | WaitForMs | WaitForExit
+
+export interface WaitForConsole extends FileWaitForConsole {
     killSignal: 'SIGTERM' | 'SIGKILL'
+}
+
+export interface WaitForMs extends FileWaitForMs {
+    killSignal: 'SIGTERM' | 'SIGKILL'
+}
+
+export interface WaitForExit extends FileWaitForExit {
+    killSignal: 'SIGTERM' | 'SIGKILL'
+}
+
+function createWaitFor (waitFor: FileWaitFor): WaitFor {
+    if (waitFor === undefined || waitFor === null) {
+        return {
+            type: 'exit',
+            timeout: 0,
+            killSignal: 'SIGTERM'
+        } satisfies WaitForExit
+    }
+    return {
+        ...waitFor,
+        killSignal: waitFor.killSignal ?? 'SIGTERM'
+    }
+}
+
+export function isWaitForConsole (waitFor: WaitFor): waitFor is WaitForConsole {
+    return waitFor?.type === 'console'
+}
+
+export function isWaitForMs (waitFor: WaitFor): waitFor is WaitForMs {
+    return waitFor?.type === 'ms'
+}
+
+export function isWaitForExit (waitFor: WaitFor): waitFor is WaitForExit {
+    return waitFor?.type === 'exit'
 }
 
 export async function createConfiguration (options: CliOptions, tasks?: string[]): Promise<Config> {
@@ -152,15 +220,11 @@ export async function createConfiguration (options: CliOptions, tasks?: string[]
             const quiet = fileTask.quiet === true ? true : (focus && (tasks != null) && !tasks.includes(key)) || false
             fullTasks[key] = {
                 ...fileTask,
+                name: key,
                 color: colorPalette[index % colorPalette.length],
                 cwd: fileTask.cwd !== undefined ? path.join(rootDir, fileTask.cwd) : rootDir,
                 quiet,
-                waitFor: (fileTask.waitFor != null)
-                    ? {
-                        ...fileTask.waitFor,
-                        killSignal: fileTask.waitFor?.killSignal ?? 'SIGTERM'
-                    }
-                    : undefined
+                waitFor: createWaitFor(fileTask.waitFor)
             }
             return fullTasks
         }, {}),

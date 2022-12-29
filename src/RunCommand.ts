@@ -1,25 +1,14 @@
-import { COLOR, Config, Task } from './Config'
-import { exec } from 'child-process-promise'
-import { ChildProcess } from 'child_process'
+import { Config, Task } from './Config'
 import { TextConsole } from './TextConsole'
 import { Console } from './Console'
-
-interface Execution {
-    task: Task
-    childProcess?: ChildProcess
-    exitPromise: Promise<unknown>
-    waitForPromise: Promise<unknown>
-}
-
-class InterruptedError extends Error {
-}
+import { Execution, InterruptedError } from './Execution'
 
 export class RunCommand {
     public executions = new Map<string, Execution>()
 
     private interrupted = false
 
-    constructor (private readonly config: Config, public console: Console = new TextConsole(config.colors)) {}
+    constructor (private readonly config: Config, public console: Console = new TextConsole(config.colors, config)) {}
 
     public async perform (tasks: string[]): Promise<void> {
         this.checkThatTasksExist(tasks)
@@ -59,7 +48,16 @@ export class RunCommand {
     }
 
     private async waitForAllProcessesToExit (): Promise<void> {
-        await Promise.all(Array.from(this.executions.values()).map(async exec => await exec.exitPromise))
+        let running = this.allRunningProcesses()
+        let max = 10
+        while (running.length && max--) {
+            await Promise.all(running.map(async exec => await exec.exitPromise))
+            running = this.allRunningProcesses()
+        }
+    }
+
+    private allRunningProcesses (): Execution[] {
+        return Array.from(this.executions.values()).filter(exec => exec.status !== 'done' && exec.status !== 'failed')
     }
 
     public handleSignal (signal: 'SIGTERM' | 'SIGINT' | 'SIGQUIT'): void {
@@ -75,133 +73,38 @@ export class RunCommand {
         const tasks = Array.from(this.executions.keys()).filter(exec => exec.startsWith(search))
         if (tasks.length === 1) {
             const taskName = tasks[0]
-            const exec = this.executions.get(taskName)
-            if (exec?.childProcess) {
-                exec.childProcess?.kill('SIGTERM')
-                await exec.exitPromise.catch(() => undefined) // TODO do something in case of failures?
-
+            const execution = this.executions.get(taskName)
+            if (execution) {
+                this.console.verbose('== Restarting task', execution.task)
+                if (execution?.childProcess && execution.exitPromise) {
+                    execution.childProcess?.kill('SIGTERM')
+                    await execution.exitPromise.catch(() => undefined) // TODO do something in case of failures?
+                }
                 this.executions.delete(taskName)
                 return await this.runTask(taskName)
             }
-            throw new Error(`task ${taskName} is not running`)
+            throw new Error('Task was not running')
         }
         throw new Error(`Which task did you mean? ${tasks.join(',')}...`)
     }
 
     private sendSignalToChildProcesses (signal: 'SIGTERM' | 'SIGINT' | 'SIGQUIT' | 'SIGKILL'): void {
-        Object.entries(this.executions).forEach(([name, exec]) => {
-            this.verbose(`== Sent ${signal} to task ${name}`, name, exec.task.color)
-            exec.childProcess?.kill(signal)
-        })
+        Array.from(this.executions.values()).forEach(exec => exec.sendSignal(signal))
     }
 
-    private async runTask (task: string): Promise<void> {
-        const taskConfig = this.findTask(task)
+    private async runTask (taskName: string): Promise<void> {
+        const task = this.findTask(taskName)
 
-        if (taskConfig.dependsOn?.length) {
-            await this.runTasksInParallel(taskConfig.dependsOn)
-            this.verbose(`== Successfully executed dependent tasks ${(taskConfig.dependsOn || []).join(',')}`, task, taskConfig.color)
+        if (task.dependsOn?.length) {
+            await this.runTasksInParallel(task.dependsOn)
         }
 
-        let execution = this.executions.get(task)
+        let execution = this.executions.get(taskName)
         if (!execution) {
-            execution = this.executeTask(task, taskConfig)
-            this.executions.set(task, execution)
+            execution = new Execution(this.console, this.config, task)
+            this.executions.set(taskName, execution)
         }
         await execution.waitForPromise
-    }
-
-    private executeTask (name: string, taskConfig: Task): Execution {
-        const statement = taskConfig.exec
-        if (!statement) {
-            return this.executeNothing(taskConfig)
-        }
-        return this.executeStatement(statement, name, taskConfig)
-    }
-
-    private executeStatement (statement: string, name: string, taskConfig: Task): Execution {
-        this.verbose(`== Executing "${statement}"`, name, taskConfig.color)
-        if (this.config.dryRun) {
-            return this.executeNothing(taskConfig)
-        }
-        const exitTimeout = (taskConfig.waitFor?.stderr ?? taskConfig.waitFor?.stdout) ? 0 : (taskConfig.waitFor?.timeout ?? 0)
-        if (exitTimeout) {
-            this.verbose(`== Adding timeout of ${taskConfig.waitFor!.timeout!}ms waiting for exit"`, name, taskConfig.color)
-        }
-
-        const exitPromise = exec(statement, {
-            shell: this.config.shell,
-            cwd: taskConfig.cwd,
-            // wait for exit here
-            timeout: exitTimeout,
-            killSignal: (taskConfig.waitFor != null) ? taskConfig.waitFor.killSignal : 'SIGTERM'
-        })
-        const childProcess = exitPromise.childProcess
-
-        let resolvedOrRejected = false
-        const waitForPromise = new Promise((resolve, reject) => {
-            if ((taskConfig.waitFor?.stdout ?? taskConfig.waitFor?.stderr) && taskConfig.waitFor?.timeout) {
-                this.verbose(`== Adding timeout of ${taskConfig.waitFor.timeout}ms waiting for output"`, name, taskConfig.color)
-                setTimeout(() => {
-                    if (!resolvedOrRejected) {
-                        resolvedOrRejected = true
-                        this.verbose(`== Timed out after ${taskConfig.waitFor!.timeout!}ms waiting for output"`, name, taskConfig.color)
-                        // TODO maybe still wait for the process to terminate with outputs here.
-                        // TODO in that case, we might need a second timeout for logging a stale process and/or SIGKILLing it
-                        exitPromise.childProcess.kill(taskConfig.waitFor!.killSignal)
-                        reject(new Error(`Timeout running task "${name}". Killed via ${taskConfig.waitFor!.killSignal}.`))
-                    }
-                }, taskConfig.waitFor.timeout)
-            }
-            exitPromise.childProcess.stdout?.on('data', (data: any) => {
-                if (typeof data === 'string') {
-                    if (!taskConfig.quiet) {
-                        this.console.write(data, name, taskConfig.color)
-                    }
-                    if (!resolvedOrRejected && taskConfig.waitFor?.stdout && data?.includes(taskConfig.waitFor.stdout)) {
-                        resolvedOrRejected = true
-                        resolve(undefined)
-                    }
-                }
-            })
-            exitPromise.childProcess.stderr?.on('data', (data: any) => {
-                this.console.write(data, name, taskConfig.color, 'err')
-                if (!resolvedOrRejected && taskConfig.waitFor?.stderr && data?.includes(taskConfig.waitFor.stderr)) {
-                    resolvedOrRejected = true
-                    resolve(undefined)
-                }
-            })
-            exitPromise.then(() => {
-                delete this.executions.get(name)?.childProcess
-                if (!resolvedOrRejected) {
-                    resolve(undefined)
-                }
-            }).catch((err) => {
-                if (!resolvedOrRejected) {
-                    if (this.interrupted) {
-                        this.console.write('== Task has been interrupted', name, taskConfig.color, 'err')
-                        reject(new InterruptedError('Process has beeen interrupted'))
-                    } else {
-                        reject(err)
-                    }
-                }
-            })
-        })
-        return {
-            task: taskConfig,
-            childProcess,
-            exitPromise,
-            waitForPromise
-        }
-    }
-
-    private executeNothing (task: Task): Execution {
-        return {
-            task,
-            childProcess: undefined,
-            exitPromise: Promise.resolve(),
-            waitForPromise: Promise.resolve()
-        }
     }
 
     private findTask (task: string): Task {
@@ -210,11 +113,5 @@ export class RunCommand {
             throw new Error(`Missing task ${task}`)
         }
         return taskConfig
-    }
-
-    private verbose (text: string, taskName: string, color: COLOR): void {
-        if (this.config.verbose) {
-            this.console.write(text, taskName, color)
-        }
     }
 }

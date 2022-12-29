@@ -1,7 +1,7 @@
 import blessed from 'reblessed'
 import { RunCommand } from './RunCommand'
 import { Console } from './Console'
-import { COLOR } from './Config'
+import { Config, Task } from './Config'
 
 export class UI implements Console {
     private readonly screen: any
@@ -10,7 +10,7 @@ export class UI implements Console {
 
     private autoScroll = true
 
-    constructor (private readonly cmd: RunCommand) {
+    constructor (private readonly cmd: RunCommand, private readonly config: Config) {
         this.screen = blessed.screen({
             smartCSR: true,
             title: 'porc'
@@ -75,16 +75,17 @@ export class UI implements Console {
 
     public async perform (tasks: string[]): Promise<void> {
         this.cmd.console = this
-        return await this.cmd.perform(tasks)
+        await this.cmd.perform(tasks)
     }
 
-    public write (data: string, name: string, color: COLOR, logger: 'out' | 'err' = 'out'): void {
+    public write (data: string, task?: Task, logger: 'out' | 'err' = 'out'): void {
+        const { name, color } = task ?? { name: '', color: 'red' }
         const lines = data.split('\n')
         const lastLineIndex = lines.length - 1
         const withoutLastLine = lines[lastLineIndex] === '' ? lines.slice(0, lastLineIndex) : lines
         withoutLastLine.forEach((line: string) => {
             const coloredLine = logger === 'out' ? line : `{red-fg}${line}{/red-fg}`
-            this.box.pushLine(`{${color}-fg}${name}: {/${color}-fg}${coloredLine}`)
+            this.box.pushLine(name ? `{${color}-fg}${name}: {/${color}-fg}${coloredLine}` : coloredLine)
         })
 
         // scroll to bottom
@@ -149,27 +150,25 @@ export class UI implements Console {
 
         input.key(['enter'], () => {
             const command = input.getText().trim()
-            this.write(`Command: "${String(command)}"`, '', 'red', 'err')
-            if (command.startsWith('r ')) {
-                const search = command.substring(2)
-                this.write(`Search: "${String(search)}"`, '', 'red', 'err')
-                void this.cmd.restartTask(search).then(() => {
-                    closeCommand()
-                }).catch((err) => {
-                    input.setContent(err.message)
-                    setTimeout(() => {
-                        closeCommand()
-                    }, 2000)
+            if (command.startsWith('rs ')) {
+                const search = command.substring(3)
+                closeCommand()
+                void this.cmd.restartTask(search).catch((err) => {
+                    this.write(err.message, undefined, 'err')
                 })
             } else {
-                input.setContent(`Unknown command: "${String(command)}"`)
-                setTimeout(() => {
-                    closeCommand()
-                }, 2000)
+                closeCommand()
+                this.write(`Unknown command: "${String(command)}"`, undefined, 'err')
             }
         })
 
         input.focus()
         this.screen.render()
+    }
+
+    public verbose (data: string, task?: Task): void {
+        if (this.config.verbose) {
+            this.write(data, task, 'err')
+        }
     }
 }

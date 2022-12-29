@@ -30,7 +30,7 @@
                 },
                 "waitFor": {
                     "$ref": "#/definitions/FileWaitFor",
-                    "description": "Optional configuration how long to wait after the process has started.\nDefault: unit after exit",
+                    "description": "Optional configuration how long to wait after the process has started.\nIf it's a number, it's a delay in ms.\nDefault: 'exit' => unit after exit",
                     "title": "waitFor"
                 }
             },
@@ -38,6 +38,20 @@
             "type": "object"
         },
         "FileWaitFor": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/FileWaitForConsole"
+                },
+                {
+                    "$ref": "#/definitions/FileWaitForMs"
+                },
+                {
+                    "$ref": "#/definitions/FileWaitForExit"
+                }
+            ],
+            "title": "FileWaitFor"
+        },
+        "FileWaitForConsole": {
             "additionalProperties": false,
             "properties": {
                 "killSignal": {
@@ -49,23 +63,92 @@
                     "title": "killSignal",
                     "type": "string"
                 },
-                "stderr": {
-                    "description": "Text to search for in stderr",
-                    "title": "stderr",
-                    "type": "string"
-                },
-                "stdout": {
+                "text": {
                     "description": "Text to search for in stdout",
-                    "title": "stdout",
+                    "title": "text",
                     "type": "string"
                 },
                 "timeout": {
                     "description": "Timeout after which the process is considered failing, while waiting for exit or missing stdout/stderr output.",
                     "title": "timeout",
                     "type": "number"
+                },
+                "type": {
+                    "enum": [
+                        "console"
+                    ],
+                    "title": "type",
+                    "type": "string"
                 }
             },
-            "title": "FileWaitFor",
+            "required": [
+                "text",
+                "type"
+            ],
+            "title": "FileWaitForConsole",
+            "type": "object"
+        },
+        "FileWaitForExit": {
+            "additionalProperties": false,
+            "properties": {
+                "killSignal": {
+                    "description": "Signal to use to terminate a process after a timeout",
+                    "enum": [
+                        "SIGKILL",
+                        "SIGTERM"
+                    ],
+                    "title": "killSignal",
+                    "type": "string"
+                },
+                "timeout": {
+                    "description": "Timeout after which the process is considered failing, while waiting for exit or missing stdout/stderr output.",
+                    "title": "timeout",
+                    "type": "number"
+                },
+                "type": {
+                    "enum": [
+                        "exit"
+                    ],
+                    "title": "type",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "title": "FileWaitForExit",
+            "type": "object"
+        },
+        "FileWaitForMs": {
+            "additionalProperties": false,
+            "properties": {
+                "delay": {
+                    "description": "Delay to wait after startup before starting followup services",
+                    "title": "delay",
+                    "type": "number"
+                },
+                "killSignal": {
+                    "description": "Signal to use to terminate a process after a timeout",
+                    "enum": [
+                        "SIGKILL",
+                        "SIGTERM"
+                    ],
+                    "title": "killSignal",
+                    "type": "string"
+                },
+                "type": {
+                    "enum": [
+                        "ms"
+                    ],
+                    "title": "type",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "delay",
+                "type"
+            ],
+            "title": "FileWaitForMs",
             "type": "object"
         }
     },

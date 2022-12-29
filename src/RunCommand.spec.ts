@@ -13,38 +13,66 @@ describe('RunCommand', () => {
 
     beforeEach(() => {
         console = {
-            write: stub()
+            write: stub(),
+            verbose: stub()
         }
 
         config = {
             tasks: {
                 test: {
+                    name: 'test',
                     exec: 'echo Test',
                     color: 'red',
-                    quiet: false
+                    quiet: false,
+                    waitFor: {
+                        type: 'exit',
+                        killSignal: 'SIGTERM'
+                    }
                 },
                 first: {
+                    name: 'first',
                     exec: 'echo First',
                     color: 'blue',
-                    quiet: false
+                    quiet: false,
+                    waitFor: {
+                        type: 'exit',
+                        killSignal: 'SIGTERM'
+                    }
+
                 },
                 second: {
+                    name: 'second',
                     dependsOn: ['first'],
                     exec: 'echo Second',
                     color: 'green',
-                    quiet: false
+                    quiet: false,
+                    waitFor: {
+                        type: 'exit',
+                        killSignal: 'SIGTERM'
+                    }
+
                 },
                 third: {
+                    name: 'third',
                     dependsOn: ['first'],
                     exec: 'echo Third',
                     color: 'green',
-                    quiet: false
+                    quiet: false,
+                    waitFor: {
+                        type: 'exit',
+                        killSignal: 'SIGTERM'
+                    }
                 },
                 fourth: {
+                    name: 'fourth',
                     dependsOn: ['second', 'third'],
                     exec: 'echo Fourth',
                     color: 'yellow',
-                    quiet: false
+                    quiet: false,
+                    waitFor: {
+                        type: 'exit',
+                        killSignal: 'SIGTERM'
+                    }
                 }
             },
             colors: true,
@@ -52,6 +80,7 @@ describe('RunCommand', () => {
             colorPalette: ['red', 'green', 'blue', 'yellow'],
             dryRun: false,
             focus: false,
+            verbose: true,
             rootDir: path.resolve('.')
         }
 
@@ -78,7 +107,7 @@ describe('RunCommand', () => {
         it('should write the output to stdout', async () => {
             await command.perform(['test'])
 
-            expect(console.write).to.have.been.calledWith('Test\n', 'test', 'red')
+            expect(console.write).to.have.been.calledWith('Test\n', config.tasks.test)
         })
 
         it('should write the error output in red color to stderr', async () => {
@@ -87,7 +116,7 @@ describe('RunCommand', () => {
 
             await command.perform(['test'])
 
-            expect(console.write).to.have.been.calledWith('Test\n', 'test', 'red', 'err')
+            expect(console.write).to.have.been.calledWith('Test\n', config.tasks.test, 'err')
         })
 
         describe('when quiet', () => {
@@ -108,7 +137,7 @@ describe('RunCommand', () => {
 
                 await command.perform(['test'])
 
-                expect(console.write).to.have.been.calledWith('Test\n', 'test', 'red', 'err')
+                expect(console.write).to.have.been.calledWith('Test\n', config.tasks.test, 'err')
             })
         })
     })
@@ -117,8 +146,8 @@ describe('RunCommand', () => {
         it('should execute first then second task', async () => {
             await command.perform(['second'])
 
-            expect(console.write).to.have.been.calledWith('First\n', 'first', 'blue')
-                .subsequently.calledWith('Second\n', 'second', 'green')
+            expect(console.write).to.have.been.calledWith('First\n', config.tasks.first)
+                .subsequently.calledWith('Second\n', config.tasks.second)
         })
 
         it('should not execute the second task if the first fails', async () => {
@@ -126,9 +155,9 @@ describe('RunCommand', () => {
             config.colors = false
             command = new RunCommand(config, console)
 
-            await command.perform(['second']).should.be.rejected
+            await command.perform(['second'])
 
-            expect(console.write).to.have.been.calledWith(sinon.match(/\/bin\/sh: .*unknown-not-found-command.*/), 'first', 'blue', 'err')
+            expect(console.write).to.have.been.calledWith(sinon.match(/\/bin\/sh: .*unknown-not-found-command.*/), config.tasks.first, 'err')
         })
 
         it('should execute multiple refs to the same task one once', async () => {
@@ -138,10 +167,10 @@ describe('RunCommand', () => {
             await command.perform(['fourth'])
 
             expect(console.write).to.have.callCount(4)
-            expect(console.write).to.have.been.calledWith('First\n', 'first')
-                .subsequently.have.been.calledWith(sinon.match('Second\n').or(sinon.match('Third\n')), sinon.match('second').or(sinon.match('third')))
-                .subsequently.have.been.calledWith(sinon.match('Second\n').or(sinon.match('Third\n')), sinon.match('second').or(sinon.match('third')))
-                .subsequently.have.been.calledWith('Fourth\n', 'fourth')
+            expect(console.write).to.have.been.calledWith('First\n', config.tasks.first)
+                .subsequently.have.been.calledWith(sinon.match('Second\n').or(sinon.match('Third\n')), sinon.match(config.tasks.second).or(sinon.match(config.tasks.third)))
+                .subsequently.have.been.calledWith(sinon.match('Second\n').or(sinon.match('Third\n')), sinon.match(config.tasks.second).or(sinon.match(config.tasks.third)))
+                .subsequently.have.been.calledWith('Fourth\n', config.tasks.fourth)
         })
     })
 })
