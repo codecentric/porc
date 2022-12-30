@@ -18,6 +18,7 @@ describe('Config', () => {
                 colors: true,
                 dryRun: false,
                 focus: true,
+                ui: false,
                 rootDir: /\/.*/,
                 tasks: {
                     failingWithTimeout: {

@@ -130,6 +130,7 @@ export interface CliOptions {
     dryRun?: boolean
     verbose?: boolean
     focus?: boolean
+    ui?: boolean
 }
 
 export interface Config extends FileConfig {
@@ -212,6 +213,7 @@ export async function createConfiguration (options: CliOptions, tasks?: string[]
     const colors = options.colors !== undefined ? options.colors : (fileConfig.colors !== undefined ? fileConfig.colors : true)
     const theme = fileConfig.theme ?? 'dark'
     const colorPalette = COLORS.filter(col => !EXCLUDE_COLORS[theme].includes(col))
+    const ui = options.ui !== undefined ? options.ui : (fileConfig.ui !== undefined ? fileConfig.ui : false)
 
     const config = {
         ...fileConfig,
@@ -233,6 +235,7 @@ export async function createConfiguration (options: CliOptions, tasks?: string[]
         colors,
         theme,
         colorPalette,
+        ui,
         dryRun: options.dryRun === true,
         rootDir
     }

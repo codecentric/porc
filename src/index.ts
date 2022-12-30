@@ -25,7 +25,7 @@ program
         const config = await createConfiguration({ ...globals, ...opts }, tasks)
         const theTasks = (tasks || []) as string[]
         const command = new RunCommand(config)
-        if (opts.ui) {
+        if (config.ui) {
             return await new UI(command, config).perform(theTasks)
         }
         await command.perform(theTasks).catch(console.error)
@@ -39,6 +39,9 @@ program
         console.log(JSON.stringify(config, undefined, 2))
     })
 
+/*
+// FIXME: fully behave like run possible, incl. options ?
+
 // eslint-disable-next-line @typescript-eslint/no-misused-promises
 program.on('command:*', async () => {
     const tasks = program.args
@@ -49,6 +52,7 @@ program.on('command:*', async () => {
         await new RunCommand(config).perform(tasks).catch(console.error)
     }
 })
+*/
 
 void (async () => {
     await program.parseAsync(process.argv)
