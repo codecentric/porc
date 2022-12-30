@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { RunCommand } from './RunCommand'
-import { CliOptions, createConfiguration } from './Config'
+import { RunCommand } from './commands/run/RunCommand'
+import { CliOptions, createConfiguration } from './config/Config'
 import { program } from 'commander'
-import { UI } from './ui'
+import { UI } from './ui/UI'
 
 program
     .name('porc')

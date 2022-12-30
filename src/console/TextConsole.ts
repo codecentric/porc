@@ -1,6 +1,6 @@
 import chalk, { Chalk } from 'chalk'
-import { Console } from './Console'
-import { Config, Task } from './Config'
+import { Console } from '../Console'
+import { Config, Task } from '../config/Config'
 
 const { black, blue, cyan, gray, green, magenta, red, white, yellow } = chalk
 

@@ -1,6 +1,6 @@
 import { ChildProcess } from 'child_process'
-import { Console } from './Console'
-import { Config, isWaitForConsole, isWaitForExit, isWaitForMs, Task } from './Config'
+import { Console } from '../../Console'
+import { Config, isWaitForConsole, isWaitForExit, isWaitForMs, Task } from '../../config/Config'
 import { exec } from 'child-process-promise'
 
 type ExecutionStatus = 'starting' | 'failed' | 'ready' | 'done'

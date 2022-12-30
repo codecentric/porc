@@ -2,8 +2,8 @@ import { expect } from 'chai'
 import { RunCommand } from './RunCommand'
 import path from 'path'
 import sinon, { stub } from 'sinon'
-import { Config } from './Config'
-import { Console } from './Console'
+import { Config } from '../../config/Config'
+import { Console } from '../../Console'
 
 describe('RunCommand', () => {
     let config: Config

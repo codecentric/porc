@@ -1,7 +1,7 @@
 import blessed from 'reblessed'
-import { RunCommand } from './RunCommand'
-import { Console } from './Console'
-import { Config, Task } from './Config'
+import { RunCommand } from '../commands/run/RunCommand'
+import { Console } from '../Console'
+import { Config, Task } from '../config/Config'
 
 export class UI implements Console {
     private readonly screen: any

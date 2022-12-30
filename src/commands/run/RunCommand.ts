@@ -1,6 +1,6 @@
-import { Config, Task } from './Config'
-import { TextConsole } from './TextConsole'
-import { Console } from './Console'
+import { Config, Task } from '../../config/Config'
+import { TextConsole } from '../../console/TextConsole'
+import { Console } from '../../Console'
 import { Execution, InterruptedError } from './Execution'
 
 export class RunCommand {
