@@ -329,11 +329,11 @@ __metadata:
   linkType: hard
 
 "@types/yargs@npm:^17.0.17":
-  version: 17.0.17
-  resolution: "@types/yargs@npm:17.0.17"
+  version: 17.0.21
+  resolution: "@types/yargs@npm:17.0.21"
   dependencies:
     "@types/yargs-parser": "*"
-  checksum: 4f1b5149e794c8960652b4339dc96655e53b48fdbe1b847fcb0db95e72e760724a4c5c616a7fccb3c0ae8beb0e57e06e37391d492e916e3ff179aafeb890e426
+  checksum: 9c1b84ce1afc82982e5c3360ec795bc6450a8857a6b90906a4cf5826f98be2f82780bad48a49953ec0149295003c1775b5c06698aea2d78fecad227b3b0dda3a
   languageName: node
   linkType: hard
 
